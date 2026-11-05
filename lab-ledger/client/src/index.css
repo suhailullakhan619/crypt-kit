@@ -1,0 +1,43 @@
+@import './theme/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* Subtle drifting fog behind the app shell (decorative). */
+  .fog {
+    background:
+      radial-gradient(60rem 30rem at 85% -10%, hsl(var(--fog) / 0.16), transparent 60%),
+      radial-gradient(40rem 22rem at -10% 110%, hsl(var(--primary) / 0.08), transparent 60%);
+  }
+}
+
+/* Req 14.3 — no decorative motion when the OS asks for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "crypt-kit",
+  "version": "0.1.0",
+  "description": "Crypt Kit — a lean, spec-driven full-stack skeleton (RBAC, config-driven resources, voice agent, PDF reports) plus two apps raised from it.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "install:all": "npm install && npm run install:skeleton && npm run install:lab && npm run install:pantry",
+    "install:skeleton": "npm install --prefix skeleton/server && npm install --prefix skeleton/client",
+    "install:lab": "npm install --prefix lab-ledger/server && npm install --prefix lab-ledger/client",
+    "install:pantry": "npm install --prefix pantry-ghost/server && npm install --prefix pantry-ghost/client",
+    "dev:skeleton": "concurrently -n api,web \"npm run dev --prefix skeleton/server\" \"npm run dev --prefix skeleton/client\"",
+    "dev:lab": "concurrently -n api,web \"npm run dev --prefix lab-ledger/server\" \"npm run dev --prefix lab-ledger/client\"",
+    "dev:pantry": "concurrently -n api,web \"npm run dev --prefix pantry-ghost/server\" \"npm run dev --prefix pantry-ghost/client\"",
+    "test": "npm run test:scripts && npm test --prefix skeleton/server && npm test --prefix skeleton/client && npm test --prefix lab-ledger/server && npm test --prefix lab-ledger/client && npm test --prefix pantry-ghost/server && npm test --prefix pantry-ghost/client",
+    "summon": "node scripts/summon.js",
+    "test:scripts": "node --test scripts/summon.test.js",
+    "test:skeleton": "npm test --prefix skeleton/server && npm test --prefix skeleton/client",
+    "check:core": "node scripts/check-core.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "type": "module"
+}

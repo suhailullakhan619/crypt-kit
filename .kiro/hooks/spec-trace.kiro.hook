@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Spec traceability audit",
+  "description": "Manually triggered: check that every acceptance criterion has a task and every Correctness Property has a test.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "For each spec folder in .kiro/specs: 1) list every acceptance criterion ID in requirements.md (e.g. 3.4) that no task in tasks.md references via `_Requirements:`; 2) list every 'Property N' in design.md that has no test file containing the comment `// Property N:` in the matching app; 3) list tasks marked [x] whose referenced files do not exist. Output a short table per spec and propose the smallest edits to close the gaps. Do not edit any files until I confirm."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "New resource checklist",
+  "description": "When a new resource definition file is created, validate it, add seed data, and document it.",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "skeleton/server/src/resources/*.js",
+      "lab-ledger/server/src/resources/*.js",
+      "pantry-ghost/server/src/resources/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new resource definition was created. Complete these steps in order. 1) Run `node -e \"import('./src/core/registry.js').then(m => m.loadResources()).then(r => console.log(Object.keys(r)))\"` in that app's server folder so `defineResource` validates it, and fix any validation error. 2) Check that every role named in `permissions` exists in `crypt.config.js`. 3) Add 5–10 realistic demo records to `src/seed/` for this resource. 4) Add a row for the resource to the 'Resources' table in that app's README.md. 5) If the resource has a `due` field, confirm the overdue sweeper picks it up."
+  }
+}

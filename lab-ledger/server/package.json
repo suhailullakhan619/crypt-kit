@@ -1,0 +1,39 @@
+{
+  "name": "lab-ledger-server",
+  "version": "0.1.0",
+  "description": "Lab Ledger API — Crypt Kit skeleton + lab equipment checkout, calibration and QR labels",
+  "type": "module",
+  "main": "src/server.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed": "node src/seed/cli.js",
+    "smoke": "node scripts/smoke.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^10.1.4",
+    "mongoose": "^8.9.5",
+    "multer": "^2.0.2",
+    "node-cron": "^3.0.3",
+    "openai": "^4.80.0",
+    "pdfkit": "^0.16.0",
+    "qrcode": "^1.5.4",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "fast-check": "^3.23.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}

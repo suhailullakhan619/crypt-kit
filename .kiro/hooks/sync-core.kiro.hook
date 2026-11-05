@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Sync skeleton core to apps",
+  "description": "The core engine must stay identical in all three apps. When skeleton/server/src/core or skeleton/client/src/components/resource changes, copy the change into lab-ledger and pantry-ghost and run their tests.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "skeleton/server/src/core/**/*.js",
+      "skeleton/server/src/middleware/**/*.js",
+      "skeleton/client/src/components/resource/**/*.jsx",
+      "skeleton/client/src/lib/can.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A shared skeleton file changed. Copy the edited file to the same relative path in `lab-ledger/` and `pantry-ghost/` without changing it there, because core code must stay byte-identical. Then run `npm test` in `lab-ledger/server` and `pantry-ghost/server`. If an app breaks, fix the app-specific code (resources/, intents/, domain services), not the core. If `server/src/core/permissions.js` changed, also check that `client/src/lib/can.js` in all three apps still mirrors it."
+  }
+}

@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit real secrets (use .env.example)
+.env
+.env.local
+
+# Build output
+dist/
+build/
+coverage/
+
+# Generated PDF reports (folder itself is kept via .gitkeep)
+**/uploads/reports/*
+!**/uploads/reports/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# IMPORTANT: do NOT ignore /.kiro — hackathon rules require it to be committed.

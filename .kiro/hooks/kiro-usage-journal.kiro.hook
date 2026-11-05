@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Update Kiro usage write-up",
+  "description": "Manually triggered after a work session: append what Kiro features were used to docs/KIRO_USAGE.md for the Devpost write-up.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Append a dated entry to docs/KIRO_USAGE.md under 'Build journal'. Cover only what happened in this session: which spec tasks were executed, which hooks fired and what they caught, which steering rule changed an output, which MCP tools were used, and any property-test counterexamples found. Keep it to five bullets or fewer, concrete and factual. Do not invent anything that did not happen in this session."
+  }
+}

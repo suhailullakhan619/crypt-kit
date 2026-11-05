@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Run related tests on save",
+  "description": "When a server source file is saved, run the Jest tests for that file (and its property tests) and fix failures before moving on.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "skeleton/server/src/**/*.js",
+      "lab-ledger/server/src/**/*.js",
+      "pantry-ghost/server/src/**/*.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A server file was just edited. Work out which app folder it belongs to (skeleton, lab-ledger or pantry-ghost). Run `npm test -- --findRelatedTests <edited file>` inside that app's `server/` folder. If any test fails, explain the root cause in one or two sentences and fix the source code, not the test, unless the test contradicts the spec in .kiro/specs. If a fast-check property fails, first copy the shrunk counterexample into a regular unit test as `testing.md` steering requires. Report the final pass/fail count."
+  }
+}

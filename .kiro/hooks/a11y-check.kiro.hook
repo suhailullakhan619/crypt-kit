@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Accessibility & theme check",
+  "description": "When a React component is saved, review it against the accessibility and spooky-theme rules in client-conventions steering.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "skeleton/client/src/**/*.jsx",
+      "lab-ledger/client/src/**/*.jsx",
+      "pantry-ghost/client/src/**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review only the saved component. Check that 1) icon-only buttons have aria-label, 2) inputs have an associated <Label htmlFor>, 3) colours come from theme tokens (CSS variables), not hard-coded hex, 4) layout works at 375px, 5) mutation controls are hidden through usePermission() rather than disabled, and 6) no resource fields are hard-coded. Fix violations directly and list what you changed in one line each. If nothing is wrong, reply 'clean'."
+  }
+}
