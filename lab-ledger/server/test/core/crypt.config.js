@@ -1,5 +1,8 @@
-// Reference skeleton config (copied verbatim from skeleton/server/crypt.config.js).
-// The "core" Jest project maps crypt.config.js to this file so the skeleton suites run unchanged.
+/**
+ * FROZEN reference config for the skeleton's own (core) test suites. Do not edit in apps:
+ * jest.config.js maps crypt.config.js to this file for the "core" project, so Core is always
+ * tested against the same roles (Admin/Member/Viewer) whatever an app configures.
+ */
 /**
  * Crypt Kit app configuration.
  *

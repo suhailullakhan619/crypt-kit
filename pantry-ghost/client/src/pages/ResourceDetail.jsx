@@ -18,6 +18,10 @@ import { EmptyCrypt } from '../components/spooky';
 import { displayValue, formatDateTime } from '../lib/format';
 import { errorMessage, humanise } from '../lib/utils';
 
+// App detail panels: client/src/detail/<resourceKey>.jsx receives { record, resource } (Req 16.13).
+const detailPanels = import.meta.glob('../detail/*.jsx', { eager: true });
+const detailPanelFor = (key) => detailPanels[`../detail/${key}.jsx`]?.default ?? null;
+
 /** Detail page: fields, status transitions, edit/delete by permission, activity (Req 13.5). */
 export default function ResourceDetail() {
   const { key, id } = useParams();
@@ -59,6 +63,7 @@ export default function ResourceDetail() {
   }
 
   const item = record.data;
+  const DetailPanel = detailPanelFor(key);
   const titleField = resource.titleField ?? resource.fields[0]?.name;
   const statusField = resource.statusFlow?.field ?? resource.due?.status ?? resource.softDelete?.field;
   const current = statusField ? item[statusField] : null;
@@ -107,7 +112,8 @@ export default function ResourceDetail() {
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <div className="flex flex-col gap-4 lg:col-span-2">
+        <Card>
           <CardHeader><CardTitle>Details</CardTitle></CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
@@ -122,6 +128,8 @@ export default function ResourceDetail() {
             </dl>
           </CardContent>
         </Card>
+        {DetailPanel && <DetailPanel record={item} resource={resource} />}
+        </div>
         <Card>
           <CardHeader><CardTitle>History</CardTitle></CardHeader>
           <CardContent>{activity.isLoading ? <Skeleton className="h-32 w-full" /> : <ActivityTimeline items={activity.data} />}</CardContent>

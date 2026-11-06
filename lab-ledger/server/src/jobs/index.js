@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import cron from 'node-cron';
 import { loadModules } from '../utils/loadModules.js';
 import { sweep } from '../services/sweeperService.js';
+import { now } from '../context.js';
 
 const APP_JOBS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'app');
 
@@ -30,7 +31,7 @@ export async function loadJobs(dir = APP_JOBS_DIR) {
 
 async function runSafely(job, registry, log) {
   try {
-    const result = await job.run({ registry, now: new Date() });
+    const result = await job.run({ registry, now: now() });
     log(`⏰ ${job.name}: ${JSON.stringify(result ?? 'ok')}`);
   } catch (err) {
     log(`✖ job ${job.name} failed: ${err.message}`);

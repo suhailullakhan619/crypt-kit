@@ -58,18 +58,10 @@ export default defineResource({
   hooks: {
     beforeCreate: (data) => upperTag(data),
     beforeUpdate: (_doc, changes) => upperTag(changes),
-  },
-  extendSchema(schema) {
-    // Soft delete (DELETE → Retired) does not go through the status-flow check, so guard it here:
-    // an item out on loan leaves CheckedOut only through the return workflow (findOneAndUpdate,
-    // which skips document middleware).
-    schema.post('init', function rememberStatus() {
-      this.$locals.loadedStatus = this.status;
-    });
-    schema.pre('save', async function guardCheckedOut() {
-      if (!this.isNew && this.isModified('status') && this.$locals.loadedStatus === 'CheckedOut') {
-        throw httpError(409, 'Equipment is checked out — record the return first');
-      }
-    });
+    // Soft delete (DELETE → Retired) skips the status-flow check, so an item out on loan could be
+    // retired from under its borrower. It leaves CheckedOut only through the return workflow.
+    beforeDelete(doc) {
+      if (doc.status === 'CheckedOut') throw httpError(409, 'Equipment is checked out — record the return first');
+    },
   },
 });

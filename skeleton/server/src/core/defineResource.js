@@ -7,9 +7,10 @@ import {
 
 const TOP_LEVEL = [
   'key', 'label', 'icon', 'titleField', 'fields', 'permissions', 'softDelete', 'statusFlow',
-  'due', 'report', 'voice', 'defaultSort', 'hooks', 'extendSchema', 'description',
+  'due', 'report', 'voice', 'defaultSort', 'hooks', 'extendSchema', 'description', 'genericDisabled',
 ];
-const HOOKS = ['beforeCreate', 'afterCreate', 'beforeUpdate', 'afterUpdate'];
+const HOOKS = ['beforeCreate', 'afterCreate', 'beforeUpdate', 'afterUpdate', 'beforeDelete', 'afterDelete'];
+const GENERIC_ACTIONS = ['create', 'update', 'delete'];
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStrArr = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string');
@@ -151,6 +152,10 @@ export function validateDefinition(def, roles = config.roles) {
     }
   }
   if (def.extendSchema !== undefined && typeof def.extendSchema !== 'function') err('extendSchema must be a function');
+  if (def.genericDisabled !== undefined) {
+    if (!isStrArr(def.genericDisabled)) err('genericDisabled must be an array of actions');
+    else for (const a of def.genericDisabled) if (!GENERIC_ACTIONS.includes(a)) err(`genericDisabled has unknown action "${a}" (allowed: create, update, delete)`);
+  }
 
   return errors;
 }

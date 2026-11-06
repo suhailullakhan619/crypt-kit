@@ -48,6 +48,12 @@ export default defineResource({
       }
       return changes;
     },
+    // A hard DELETE (LabManager) of a loan that is out would orphan a CheckedOut item (Req 16.10 hook).
+    beforeDelete(doc) {
+      if (OUT_STATUSES.includes(doc.status)) {
+        throw httpError(409, 'This checkout is out on loan — record the return instead of deleting it');
+      }
+    },
   },
   extendSchema(schema) {
     // Second guard for Req 3.4: at most one Active/Overdue checkout per equipment item.
@@ -56,13 +62,5 @@ export default defineResource({
       { name: 'one_active_checkout_per_equipment', unique: true, partialFilterExpression: { status: { $in: OUT_STATUSES } } }
     );
     schema.index({ borrower: 1, createdAt: -1 });
-    // A hard DELETE (LabManager) of a loan that is out would orphan a CheckedOut item.
-    schema.pre('findOneAndDelete', async function guardOutLoan() {
-      const session = this.getOptions().session ?? null;
-      const doc = await this.model.findOne(this.getFilter()).session(session).lean();
-      if (doc && OUT_STATUSES.includes(doc.status)) {
-        throw httpError(409, 'This checkout is out on loan — record the return instead of deleting it');
-      }
-    });
   },
 });

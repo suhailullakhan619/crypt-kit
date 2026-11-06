@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const APPS = ['lab-ledger', 'pantry-ghost'];
-const CORE_DIRS = ['server/src/core', 'server/src/middleware', 'client/src/components/resource'];
-const CORE_FILES = ['client/src/lib/can.js'];
+const CORE_DIRS = ['server/src/core', 'server/src/middleware', 'server/test/core', 'client/src/components/resource'];
+const CORE_FILES = ['client/src/lib/can.js', 'server/jest.config.js'];
 
 async function walk(dir) {
   const out = [];

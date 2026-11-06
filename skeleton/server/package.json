@@ -34,10 +34,5 @@
     "fast-check": "^3.23.2",
     "jest": "^29.7.0",
     "supertest": "^7.0.0"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "transform": {},
-    "testTimeout": 60000
   }
 }

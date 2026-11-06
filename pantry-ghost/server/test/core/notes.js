@@ -1,9 +1,7 @@
 import { defineResource } from '../../src/core/defineResource.js';
 
 /**
- * The skeleton example resource, kept only as a test fixture: Lab Ledger deleted
- * src/resources/notes.js, and the "core" Jest project maps the Core suite import of
- * ../resources/notes.js here (see jest.config.js).
+ * Example resource shipped with the skeleton. Delete or replace it in your app.
  * Exercises every feature: search, filters, ref, status flow, due rule, soft delete, report, voice.
  */
 export default defineResource({

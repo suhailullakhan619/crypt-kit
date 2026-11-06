@@ -14,3 +14,17 @@ export default appRoutes;
 
 /** Report presets shown on the Reports page: { label, resource, filters, title }. */
 export const reportPresets = [];
+
+/**
+ * Bulk actions on a resource's list page (Req 16.14). When any action is available to the
+ * user, rows get checkboxes and an action bar appears once something is selected.
+ *
+ *   export const bulkActions = {
+ *     equipment: [{ label: 'Print labels', icon: 'printer', roles: ['Technician'],
+ *                   run: async ({ api, ids, items }) => { ... } }],
+ *   };
+ *
+ * `roles` omitted = every role that can read the resource (the Superuser always qualifies).
+ * `run` may return a message string, which is shown as a success toast.
+ */
+export const bulkActions = {};

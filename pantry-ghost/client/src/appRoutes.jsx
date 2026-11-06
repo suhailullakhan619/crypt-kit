@@ -20,3 +20,6 @@ export const reportPresets = [
   { label: 'Use-first list', resource: 'stock-lots', filters: { status: 'ExpiringSoon' }, title: 'Use first — expiring soon' },
   { label: 'Expired stock', resource: 'stock-lots', filters: { status: 'Expired' }, title: 'Expired stock to clear' },
 ];
+
+/** Bulk actions on generic list pages (skeleton Req 16.14). Pantry Ghost needs none yet. */
+export const bulkActions = {};

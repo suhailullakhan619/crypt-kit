@@ -81,7 +81,11 @@ None of these require editing `core/`.
 
 | Need | Where |
 |---|---|
-| Logic on create/update (runs in the same transaction) | `hooks: { beforeCreate, afterCreate, beforeUpdate, afterUpdate }` in the definition |
+| Logic on create/update/delete (runs in the same transaction) | `hooks: { beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDelete, afterDelete }` in the definition |
+| Records only a workflow may create/change/delete | `genericDisabled: ['create', 'update', 'delete']` — generic routes 405 for every role, UI hides the buttons |
+| Deterministic time in tests | `setContext({ ...ctx, clock: () => fixedDate })` — hooks (`ctx.now`), sweeper, voice and dashboard use it |
+| Extra panel on a detail page | `client/src/detail/<resourceKey>.jsx` → receives `{ record, resource }` |
+| Bulk actions with row selection | `bulkActions` export in `client/src/appRoutes.jsx` → `{ label, icon, roles?, run({ api, ids, items }) }` |
 | Statuses only a workflow may set | `statusFlow.workflowOnly: ['CheckedOut']` |
 | Extra schema paths / indexes | `extendSchema(schema)` in the definition |
 | Custom endpoints | `server/src/routes/app/*.js` (default-export an express Router) |
@@ -105,7 +109,8 @@ npm run summon -- my-app "My App"
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest + fast-check: 19 correctness properties, integration, voice, reports
+npm test --prefix server     # Jest + fast-check: 21 correctness properties, integration, voice, reports
+                             # (jest.config.js runs the core suites against the frozen config in test/core/)
 npm test --prefix client     # Vitest: permission mirror property, role-based UI, voice states, WCAG contrast
 npm run smoke --prefix server  # boots demo mode and runs HTTP checks
 ```

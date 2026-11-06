@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getContext } from '../context.js';
+import { getContext, now as clockNow } from '../context.js';
 import { can, isSuperuser } from '../core/permissions.js';
 import { loadModules } from '../utils/loadModules.js';
 import * as activity from './activityService.js';
@@ -52,7 +52,7 @@ async function statsFor(resource, now) {
  * @param {{ userId: string, role: string }} user
  * @param {Date} [now]
  */
-export async function getDashboard(user, now = new Date()) {
+export async function getDashboard(user, now = clockNow()) {
   const { registry, config } = getContext();
   const readable = (registry?.all() ?? []).filter((r) => can(user.role, r.def, 'read', config.roles));
 

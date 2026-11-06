@@ -34,56 +34,5 @@
     "fast-check": "^3.23.2",
     "jest": "^29.7.0",
     "supertest": "^7.0.0"
-  },
-  "jest": {
-    "testTimeout": 120000,
-    "projects": [
-      {
-        "displayName": "skeleton",
-        "testEnvironment": "node",
-        "transform": {},
-        "testMatch": [
-          "<rootDir>/src/**/*.test.js"
-        ],
-        "testPathIgnorePatterns": [
-          "/node_modules/",
-          "/src/domain/",
-          "/src/resources/",
-          "/src/intents/",
-          "/src/dashboard/",
-          "/src/jobs/app/",
-          "/src/routes/app/",
-          "/src/services/(distribution|intake|impact|expiry)Service",
-          "/test/"
-        ],
-        "moduleNameMapper": {
-          "^(\\.\\./)+crypt\\.config\\.js$": "<rootDir>/test/fixtures/skeleton/crypt.config.js",
-          "^\\.\\./resources/notes\\.js$": "<rootDir>/test/fixtures/skeleton/notes.js"
-        }
-      },
-      {
-        "displayName": "pantry",
-        "testEnvironment": "node",
-        "transform": {},
-        "testMatch": [
-          "<rootDir>/src/domain/**/*.test.js",
-          "<rootDir>/src/resources/**/*.test.js",
-          "<rootDir>/src/intents/**/*.test.js",
-          "<rootDir>/src/dashboard/**/*.test.js",
-          "<rootDir>/src/jobs/app/**/*.test.js",
-          "<rootDir>/src/routes/app/**/*.test.js",
-          "<rootDir>/src/services/distributionService*.test.js",
-          "<rootDir>/src/services/intakeService*.test.js",
-          "<rootDir>/src/services/impactService*.test.js",
-          "<rootDir>/src/services/expiryService*.test.js",
-          "<rootDir>/test/**/*.test.js"
-        ],
-        "testPathIgnorePatterns": [
-          "/node_modules/",
-          "/test/fixtures/",
-          "/test/generators/"
-        ]
-      }
-    ]
   }
 }

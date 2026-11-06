@@ -1,4 +1,5 @@
 import * as activity from './activityService.js';
+import { now as clockNow } from '../context.js';
 
 /**
  * Applies every resource's Due Rule (Req 8.2–8.5): records whose due date is before `now`
@@ -8,7 +9,7 @@ import * as activity from './activityService.js';
  * @param {Date} [now] - injectable for deterministic tests
  * @returns {Promise<Record<string, number>>} records changed per resource key
  */
-export async function sweep(registry, now = new Date()) {
+export async function sweep(registry, now = clockNow()) {
   const results = {};
   for (const r of registry.withDue()) {
     const { field, status, from, to } = r.def.due;

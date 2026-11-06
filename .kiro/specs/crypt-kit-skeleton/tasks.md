@@ -253,6 +253,24 @@ Build the `/skeleton` app, which Lab Ledger and Pantry Ghost are later copied fr
 - [x] 17. Final checkpoint: skeleton ready to summon
   - Ensure all tests pass, then run `npm run summon -- lab-ledger` and `npm run summon -- pantry-ghost` to start the app specs; ask the user if questions arise.
 
+- [x] 18. Close the gaps the apps uncovered
+  - [x] 18.1 Ship `server/jest.config.js` with `core` and `app` projects, and reference fixtures in `server/test/core/`
+    - _Requirements: 16.15_
+
+  - [x] 18.2 Add `beforeDelete`/`afterDelete` hooks, an injectable `clock`, and `genericDisabled` (validation, generic routes 405, meta)
+    - _Requirements: 16.10, 16.11, 16.12_
+
+  - [x]* 18.3 Write property tests for delete hooks, the injected clock and `genericDisabled` (Properties 20, 21)
+    - **Property 20: Delete Hooks Guard and Roll Back Deletes**
+    - **Property 21: Generically Disabled Actions Are Refused for Every Role**
+    - **Validates: Requirements 16.10, 16.12**
+
+  - [x] 18.4 Add client detail panels (`src/detail/<key>.jsx`), bulk actions with row selection, and `genericDisabled`-aware permission checks
+    - _Requirements: 16.12, 16.13, 16.14_
+
+  - [x] 18.5 Sync Core into both apps, then replace the apps' workarounds: Pantry distributions use `genericDisabled` and a lines detail panel; Lab label printing becomes a bulk action; Lab delete guards become `beforeDelete`; both apps adopt the skeleton jest config
+    - _Requirements: 1.1, 16.10, 16.12, 16.13, 16.14, 16.15_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for a faster MVP. **For this hackathon, keep the property tests.** They are a judged Kiro feature (PBT), and the write-up should cite any counterexamples they find.

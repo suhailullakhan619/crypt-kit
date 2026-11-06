@@ -10,12 +10,12 @@
 
 | | Server tests | Client tests | Smoke (HTTP) | Core drift |
 |---|---|---|---|---|
-| Skeleton | 70 | 31 | 32/32 | — |
-| Lab Ledger | 119 (68 skeleton + 51 app) | 43 | 40/40 | identical |
-| Pantry Ghost | 136 (68 skeleton + 68 app) | 39 | 30/30 | identical |
+| Skeleton | 76 | 35 | 31/31 | — |
+| Lab Ledger | 125 (74 core + 51 app) | 47 | 40/40 | identical |
+| Pantry Ghost | 142 (74 core + 68 app) | 43 | 30/30 | identical |
 | Summon script | 5 (`node:test`) | | | `npm run check:core` ✔ |
 
-The core, server middleware and generic UI components are byte-identical in all three apps: 27 files, checked by hash.
+The core, server middleware, generic UI components, the shared Jest config and the core test fixtures are byte-identical in all three apps: 31 files, checked by hash.
 
 ## Kiro surfaces used
 - **Kiro IDE:** _which parts (spec execution, hooks, chat)_
@@ -46,7 +46,7 @@ The core, server middleware and generic UI components are byte-identical in all 
 - **Playwright MCP:** _check 375px/1440px layouts, run the demo flow end to end_
 
 ## Property-based testing
-- Skeleton: 19 properties. Lab Ledger: 6 (L1–L6). Pantry Ghost: 6 (P1–P6). Each one is a `fast-check` suite headed `// Property N:` / `// Validates: Requirements …`.
+- Skeleton: 21 properties. Lab Ledger: 6 (L1–L6). Pantry Ghost: 6 (P1–P6). Each one is a `fast-check` suite headed `// Property N:` / `// Validates: Requirements …`.
 - **Real bug found:** Pantry Ghost P5 (intake parser round trip). A typo'd donor name ("food" → "good") made the parser stop early at the "good until" date marker. The parser now stops only at a complete marker, and the shrunk case is kept as a unit test. (`docs/journal-pantry-ghost.md`)
 - **Model-based testing:** Lab Ledger L1 uses `fc.commands` to drive request, approve (including concurrent double approval), return, reject, cancel and sweep, checking the "at most one active loan per item" invariant after every step.
   - Deliberately breaking the return rule made L1 fail at once, with the shrunk sequence `[request, approve, return(Damaged)]`.
@@ -109,3 +109,21 @@ The core, server middleware and generic UI components are byte-identical in all 
   - There is no detail-panel extension point.
   - The generic list page has no row selection.
   - The superuser sees a generic "New" button on workflow-only resources.
+
+### 2026-11-06: skeleton task 18, closing the gaps the apps found
+- The spec came first: skeleton requirements 16.10–16.15, Properties 20 and 21, and task 18, all written before any code.
+- **Delete hooks:** `beforeDelete` and `afterDelete` run in the delete transaction for soft and hard deletes. Lab Ledger's two Mongoose middleware guards (no deleting an out loan, no retiring a checked-out item) became `beforeDelete` hooks.
+- **Injectable clock:** `clock` in the runtime context drives hook `ctx.now`, soft-delete timestamps, the sweeper, voice and the dashboard. A test injects 31 Oct 2031 and sees it everywhere.
+- **`genericDisabled`:** generic routes answer 405 for every role, and meta reports those actions as not permitted. Pantry Ghost distributions dropped their deny hooks and delete guard, and the Coordinator no longer sees a dead "New" button.
+- **Client extension points:**
+  - `client/src/detail/<key>.jsx` panels. Pantry Ghost now shows the packed lines of a distribution, grouped by location.
+  - `bulkActions` with row selection on the list page. Lab Ledger's separate "Print labels" page became an "Print labels" bulk action on the Equipment list.
+- **Shared Jest config:** a Core `jest.config.js` with `core`/`app` projects and frozen fixtures in `test/core/`. Both apps deleted their custom Jest setups. Making the ignore patterns work with Windows path separators fixed core suites that had been running twice.
+- **Regressions this caught:** both apps' old delete guards had hooked `findOneAndDelete`, which the new transactional delete no longer calls. Their tests caught it straight away (an out loan could be deleted, and a distribution could be deleted), and the guards were moved to the new extension points.
+- **Results:**
+  - Skeleton: 76 server, 35 client, 31/31 smoke
+  - Lab Ledger: 125, 47, 40/40
+  - Pantry Ghost: 142, 43, 30/30
+  - `check-core`: 31 identical files
+  - Browser checks: Lab bulk label printing, and the Pantry Coordinator view of distributions (no New/Edit/Delete; packed-lines panel)
+- **Correction:** the skeleton smoke script has 31 checks, not the 32 reported earlier; the 32 counted the helper's definition.

@@ -279,3 +279,12 @@ Apps are raised from the skeleton by copying it (`npm run summon -- <name>`) and
 7. THE Client SHALL render app dashboard panels returned by `/api/dashboard` under `panels[]` using `client/src/dashboard/<key>.jsx` when that file exists, and otherwise a generic table.
 8. THE Resource Definition SHALL support an optional `extendSchema(schema)` callback. It is invoked before the Mongoose model is compiled, so apps can add sub-document paths or indexes (e.g. partial unique indexes). Paths added this way are treated as `hidden` in meta unless declared in `fields`.
 9. THE Voice Agent UI SHALL render an intent's `data` with `client/src/voice/<INTENT_NAME>.jsx` when that file exists, and otherwise show the text answer only.
+
+> Criteria 10–15 were added after building Lab Ledger and Pantry Ghost. Both apps had to work around these gaps in app code (see docs/KIRO_USAGE.md).
+
+10. THE Resource Definition SHALL support `hooks.beforeDelete(doc, ctx)` and `hooks.afterDelete(doc, ctx)`, run in the delete transaction for both soft and hard deletes. A `beforeDelete` that throws an `httpError` aborts the delete with that status.
+11. THE runtime context SHALL accept an optional `clock` function. Hook `ctx.now`, the Overdue Sweeper default, voice answers and dashboard "due soon" windows SHALL all read time through it, so tests can inject a fixed time.
+12. THE Resource Definition SHALL support `genericDisabled` (a subset of `create`, `update`, `delete`). The generic `/api/r/:key` routes SHALL answer HTTP 405 for those actions for every role, including the Superuser. Meta SHALL report those actions as not permitted, so the generic UI hides their controls. Domain routes are unaffected.
+13. THE Client SHALL render `client/src/detail/<resourceKey>.jsx`, when it exists, as an extra panel on that resource's detail page. The panel receives `{ record, resource }`.
+14. THE Client SHALL support bulk actions declared in `client/src/appRoutes.jsx` as `bulkActions[resourceKey] = [{ label, icon, roles?, run({ api, ids, items }) }]`. WHEN any bulk action is available to the user, the Resource List Page SHALL show row checkboxes (desktop and mobile), a select-all control and an action bar.
+15. THE Skeleton SHALL ship `server/jest.config.js` with a `core` project that runs the skeleton's own suites against a frozen reference config (`server/test/core/`), and an `app` project that runs every other suite against the app's real `crypt.config.js`. Apps raised from the skeleton SHALL run all skeleton suites unchanged with no extra configuration.

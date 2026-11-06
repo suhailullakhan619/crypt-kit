@@ -288,6 +288,11 @@ answer(text, user):
 | Custom jobs | `src/jobs/app/*.js` `{ name, schedule, run, runAtBoot }` | Pantry Ghost expiry classifier |
 | Dashboard panels | `src/dashboard/*.js` `{ key, title, roles, load }` + optional `client/src/dashboard/<key>.jsx` | "Out right now", "Use First" |
 | Rich voice results | `client/src/voice/<INTENT>.jsx` loaded with `import.meta.glob` | Pantry Ghost intake confirm card |
+| Guard deletes | `hooks.beforeDelete / afterDelete` (in-transaction, soft and hard) | Lab Ledger: no retiring an item that is out on loan |
+| Deterministic time | `setContext({ ..., clock: () => fixedDate })`; `now()` from context.js is used by hooks, sweeper, voice and dashboard | calibration and expiry property tests |
+| Workflow-only resources | `genericDisabled: ['create','update','delete']` → generic routes 405, meta reports the actions as not permitted | Pantry Ghost distributions |
+| Extra detail panels | `client/src/detail/<key>.jsx` receives `{ record, resource }` | Pantry Ghost distribution lines |
+| Bulk actions | `bulkActions` export in `appRoutes.jsx` → row selection and action bar on the list page | Lab Ledger: print QR labels for the selected equipment |
 | Aggregate voice answers | intent `{ aggregateOnly: true, requires: [...] }` | Pantry Ghost `HOUSEHOLDS_SERVED` for Board |
 | Custom PDFs | `reportService.createReport({ ..., render(doc, helpers) })`; helpers = `{ table, heading, kv, barChart }` | Pantry Ghost impact report |
 
@@ -534,3 +539,11 @@ For any resource with hooks and any mutation where a hook throws, the record, an
 ### Property 19: Workflow-Only States Are Unreachable Through Generic PATCH
 For any status flow with `workflowOnly` values, a generic PATCH into or out of one of those values returns 409, whatever the transitions map says.
 **Validates: Requirements 16.3**
+
+### Property 20: Delete Hooks Guard and Roll Back Deletes
+For any resource with delete hooks and any record, when `beforeDelete` throws, the record, any documents the hook touched, and the Activity Log are unchanged. When it does not throw, `beforeDelete` and `afterDelete` each run exactly once inside the delete transaction.
+**Validates: Requirements 16.10**
+
+### Property 21: Generically Disabled Actions Are Refused for Every Role
+For any resource with `genericDisabled` and any role (the Superuser included), a generic request for a disabled action returns 405 and changes nothing, and `/api/meta` reports that action as not permitted.
+**Validates: Requirements 16.12**

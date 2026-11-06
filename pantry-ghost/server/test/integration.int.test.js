@@ -74,9 +74,9 @@ test('permission matrix for the four resources (Req 2.1–2.5)', async () => {
   expect(await status('Coordinator', 'patch', `/api/r/donors/${donor._id}`, { contact: 'x' })).toBe(200);
   // distributions: generic mutations are denied to everyone, the superuser included
   const dist = await distributions.model.findOne().lean();
-  expect(await status('Coordinator', 'post', '/api/r/distributions', { household: String(dist.household) })).toBe(403);
-  expect(await status('Coordinator', 'patch', `/api/r/distributions/${dist._id}`, { totalUnits: 1 })).toBe(403);
-  expect(await status('Coordinator', 'delete', `/api/r/distributions/${dist._id}`)).toBe(403);
+  expect(await status('Coordinator', 'post', '/api/r/distributions', { household: String(dist.household) })).toBe(405);
+  expect(await status('Coordinator', 'patch', `/api/r/distributions/${dist._id}`, { totalUnits: 1 })).toBe(405);
+  expect(await status('Coordinator', 'delete', `/api/r/distributions/${dist._id}`)).toBe(405);
   expect(await distributions.model.countDocuments()).toBe(150);
 });
 

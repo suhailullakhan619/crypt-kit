@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Plus, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useApi } from '../hooks/useApi';
 import { useMeta } from '../context/MetaContext';
 import { usePermission } from '../hooks/usePermission';
@@ -14,6 +15,8 @@ import { ResourceFilters } from '../components/resource/ResourceFilters';
 import { ResourceTable } from '../components/resource/ResourceTable';
 import { ResourceIcon, EmptyCrypt } from '../components/spooky';
 import NotFound from './NotFound';
+import { bulkActions } from '../appRoutes';
+import { errorMessage } from '../lib/utils';
 
 const RESERVED = ['page', 'q'];
 
@@ -22,10 +25,16 @@ export default function ResourceList() {
   const { key } = useParams();
   const api = useApi();
   const meta = useMeta();
-  const { can } = usePermission();
+  const { can, role, isSuperuser } = usePermission();
   const resource = meta.resource(key);
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
+  const [selected, setSelected] = useState(() => new Set());
+  const [running, setRunning] = useState(null);
+  const actions = (bulkActions[key] ?? []).filter((a) => !a.roles || isSuperuser || a.roles.includes(role));
+
+  // Selection is per resource; clear it when switching lists.
+  useEffect(() => setSelected(new Set()), [key]);
 
   const page = Number(params.get('page') ?? 1);
   const filters = useMemo(() => Object.fromEntries([...params.entries()].filter(([k]) => !RESERVED.includes(k))), [params]);
@@ -58,6 +67,19 @@ export default function ResourceList() {
   };
   const goto = (n) => { const p = new URLSearchParams(params); p.set('page', String(n)); setParams(p); };
   const activeFilters = Object.values(filters).some(Boolean);
+  const selectedItems = (data?.items ?? []).filter((i) => selected.has(i._id));
+
+  const runAction = async (action) => {
+    setRunning(action.label);
+    try {
+      const msg = await action.run({ api, ids: [...selected], items: selectedItems });
+      if (typeof msg === 'string') toast.success(msg);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setRunning(null);
+    }
+  };
 
   return (
     <div>
@@ -88,6 +110,18 @@ export default function ResourceList() {
         )}
       </Card>
 
+      {actions.length > 0 && selected.size > 0 && (
+        <Card role="region" aria-label="Bulk actions" className="sticky top-16 z-20 mb-3 flex flex-wrap items-center gap-2 border-primary/40 bg-card/95 p-3 backdrop-blur">
+          <span className="mr-1 text-sm font-medium">{selected.size} selected</span>
+          {actions.map((a) => (
+            <Button key={a.label} size="sm" disabled={!!running} onClick={() => runAction(a)}>
+              {a.icon && <ResourceIcon name={a.icon} />} {running === a.label ? 'Working…' : a.label}
+            </Button>
+          ))}
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}><X className="h-4 w-4" aria-hidden /> Clear selection</Button>
+        </Card>
+      )}
+
       <Card className={isFetching && !isLoading ? 'opacity-70 transition-opacity' : ''}>
         {isLoading ? (
           <div className="flex flex-col gap-3 p-4">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
@@ -100,7 +134,11 @@ export default function ResourceList() {
           </EmptyCrypt>
         ) : (
           <div className="p-2 md:p-0">
-            <ResourceTable resource={resource} items={data.items} />
+            <ResourceTable
+              resource={resource}
+              items={data.items}
+              {...(actions.length ? { selected, onSelectedChange: setSelected } : {})}
+            />
           </div>
         )}
       </Card>

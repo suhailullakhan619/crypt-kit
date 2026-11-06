@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { getContext } from '../context.js';
+import { getContext, now } from '../context.js';
 import { isSuperuser } from '../core/permissions.js';
 import { checkGenericTransition } from '../core/statusFlow.js';
 import { OBJECT_ID_RE } from '../core/fieldTypes.js';
@@ -124,7 +124,7 @@ export function populateSpecs(def, registry) {
 
 function hookCtx(user, session) {
   const { registry } = getContext();
-  return { user, registry, session, now: new Date() };
+  return { user, registry, session, now: now() };
 }
 
 function assertId(id) {
@@ -238,32 +238,38 @@ export async function update(resource, id, body, user) {
 }
 
 /**
- * Soft-deletes (status + timestamp) or hard-deletes a record (Req 5.6, 5.7).
+ * Soft-deletes (status + timestamp) or hard-deletes a record (Req 5.6, 5.7), running
+ * `hooks.beforeDelete` / `hooks.afterDelete` inside the same transaction (Req 16.10).
  * @returns {Promise<{ soft: boolean, item?: object }>}
- * @throws {Error} 404 unknown or already-deleted record
+ * @throws {Error} 404 unknown or already-deleted record; any httpError thrown by beforeDelete
  */
 export async function remove(resource, id, user) {
   assertId(id);
   const { def, model, key } = resource;
   const sd = def.softDelete;
 
-  if (sd) {
-    await withTransaction(async (session) => {
-      const doc = await model.findById(id).session(session);
-      if (!doc || doc[sd.field] === sd.value) throw httpError(404, 'Record not found');
-      const before = doc.toObject();
-      doc[sd.field] = sd.value;
-      doc[sd.at] = new Date();
-      await doc.save({ session, validateModifiedOnly: true });
-      await activity.record({ actor: user, resource: key, recordId: doc._id, action: 'delete', diff: diff(before, doc, def) }, session);
-    });
-    return { soft: true, item: await get(resource, id) };
-  }
-
   await withTransaction(async (session) => {
-    const doc = await model.findByIdAndDelete(id, { session });
-    if (!doc) throw httpError(404, 'Record not found');
-    await activity.record({ actor: user, resource: key, recordId: doc._id, action: 'delete', diff: diff(doc, null, def) }, session);
+    const doc = await model.findById(id).session(session);
+    if (!doc || (sd && doc[sd.field] === sd.value)) throw httpError(404, 'Record not found');
+
+    const ctx = hookCtx(user, session);
+    if (def.hooks?.beforeDelete) await def.hooks.beforeDelete(doc, ctx);
+
+    const before = doc.toObject();
+    if (sd) {
+      doc[sd.field] = sd.value;
+      doc[sd.at] = ctx.now;
+      await doc.save({ session, validateModifiedOnly: true });
+    } else {
+      await model.deleteOne({ _id: doc._id }, { session });
+    }
+
+    if (def.hooks?.afterDelete) await def.hooks.afterDelete(doc, ctx);
+    await activity.record(
+      { actor: user, resource: key, recordId: doc._id, action: 'delete', diff: sd ? diff(before, doc, def) : diff(before, null, def) },
+      session
+    );
   });
-  return { soft: false };
+
+  return sd ? { soft: true, item: await get(resource, id) } : { soft: false };
 }

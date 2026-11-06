@@ -20,6 +20,7 @@ function publicField(name, spec) {
  */
 export function publicResource(resource, role, roles) {
   const { def } = resource;
+  const disabled = def.genericDisabled ?? [];
   const fields = Object.entries(def.fields)
     .filter(([, s]) => !s.secret && !s.hidden)
     .map(([n, s]) => publicField(n, s));
@@ -37,12 +38,14 @@ export function publicResource(resource, role, roles) {
     description: def.description ?? null,
     titleField: def.titleField ?? fields[0]?.name ?? null,
     fields,
+    // Generic actions the UI may offer: role permission AND not genericDisabled (Req 16.12).
     permissions: {
       read: can(role, def, 'read', roles),
-      create: can(role, def, 'create', roles),
-      update: can(role, def, 'update', roles),
-      delete: can(role, def, 'delete', roles),
+      create: can(role, def, 'create', roles) && !disabled.includes('create'),
+      update: can(role, def, 'update', roles) && !disabled.includes('update'),
+      delete: can(role, def, 'delete', roles) && !disabled.includes('delete'),
     },
+    genericDisabled: disabled,
     rolePermissions: def.permissions,
     statusFlow: flow,
     due: def.due ?? null,

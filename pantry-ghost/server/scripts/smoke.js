@@ -94,7 +94,7 @@ try {
   const greedy = await call('POST', '/distributions', { token: t.Volunteer, body: { householdId, lines: [{ lotId: lines[0]?.lotId, quantity: 999 }] } });
   const unchanged = await call('GET', `/r/stock-lots/${lines[0]?.lotId}`, { token: t.Volunteer });
   check('shortfall → 409 with short lines, no stock change', greedy.status === 409 && greedy.json.short?.length === 1 && unchanged.json.item.quantity === firstAfter.json.item.quantity, greedy.json?.error);
-  check('generic distribution create denied (even Coordinator) → 403', (await call('POST', '/r/distributions', { token: t.Coordinator, body: { household: householdId } })).status === 403);
+  check('generic distribution create disabled (even Coordinator) → 405', (await call('POST', '/r/distributions', { token: t.Coordinator, body: { household: householdId } })).status === 405);
 
   // ── expiry effect on seeded data ───────────────────────────────────────────
   const expired = await call('GET', '/r/stock-lots?status=Expired&limit=1', { token: t.Board });

@@ -63,11 +63,11 @@ npm run smoke --prefix lab-ledger/server   # boots demo mode and runs the HTTP c
 
 | | Server | Client | Smoke |
 |---|---|---|---|
-| Skeleton | 70 | 31 | 32 checks |
-| Lab Ledger | 119 | 43 | 40 checks |
-| Pantry Ghost | 136 | 39 | 30 checks |
+| Skeleton | 76 | 35 | 31 checks |
+| Lab Ledger | 125 | 47 | 40 checks |
+| Pantry Ghost | 142 | 43 | 30 checks |
 
-The tests include 31 property-based correctness properties (`fast-check`), each linked to spec requirements. See [docs/KIRO_USAGE.md](docs/KIRO_USAGE.md).
+The tests include 33 property-based correctness properties (`fast-check`), each linked to spec requirements. See [docs/KIRO_USAGE.md](docs/KIRO_USAGE.md).
 
 ## Raise your own app
 

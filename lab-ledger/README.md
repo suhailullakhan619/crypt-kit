@@ -49,7 +49,7 @@ Technician: Record return (Good / Fair / Damaged) ──────────
 - **Approve** runs in one transaction with a conditional `findOneAndUpdate({ status: 'Available' })` on the equipment, so two concurrent approvals for the same item can never both win (HTTP 409 for the loser). A partial unique index is the second guard.
 - Every transition writes an Activity Log entry on **both** the checkout and the equipment.
 - **Calibration**: logging one schedules the next due date; the skeleton sweeper flags items whose date has passed as `CalibrationDue`.
-- **QR labels**: *Print labels* (staff) → select items → A4 PDF, 3 × 8 labels per sheet. Each QR opens `<CLIENT_URL>/scan/<assetTag>`.
+- **QR labels**: on the Equipment list, staff tick rows → *Print labels* bulk action → A4 PDF, 3 × 8 labels per sheet. Each QR opens `<CLIENT_URL>/scan/<assetTag>`.
 - **Scan**: `/scan` uses the camera (`BarcodeDetector`) when the browser supports it, otherwise a manual tag box. `/scan/LL-0042` shows the item card with status, borrower, due back, next calibration and the actions you are allowed to take. Unknown tags: “No equipment haunts this tag”.
 - **Voice** (text or speech): “who has the oscilloscope?”, “is the centrifuge available?”, “what needs calibration this month?”, “which items are overdue?” — names are fuzzy-matched (≤ 2 typos per word).
 - **Dashboard**: an *Out right now* panel lists active loans with overdue ones first and highlighted.

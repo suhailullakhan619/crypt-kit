@@ -1,9 +1,7 @@
-import { defineResource } from '../../../src/core/defineResource.js';
+import { defineResource } from '../../src/core/defineResource.js';
 
 /**
- * The skeleton example resource, kept only as a fixture for the unchanged skeleton suite
- * (src/core/defineResource.property.test.js imports ../resources/notes.js; the skeleton Jest
- * project maps that import here). Pantry Ghost itself does not register it.
+ * Example resource shipped with the skeleton. Delete or replace it in your app.
  * Exercises every feature: search, filters, ref, status flow, due rule, soft delete, report, voice.
  */
 export default defineResource({

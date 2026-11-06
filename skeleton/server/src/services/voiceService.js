@@ -1,4 +1,4 @@
-import { getContext } from '../context.js';
+import { getContext, now as clockNow } from '../context.js';
 import { can } from '../core/permissions.js';
 import { parseIntent } from '../core/intentRegistry.js';
 import { httpError } from '../utils/httpError.js';
@@ -25,7 +25,7 @@ export function mayRun(entry, user, { registry, config }) {
  * @param {{ now?: Date }} [opts]
  * @returns {Promise<{ transcript: string, intent: string, answer: string, data: any }>}
  */
-export async function answer(text, user, { now = new Date() } = {}) {
+export async function answer(text, user, { now = clockNow() } = {}) {
   if (typeof text !== 'string' || !text.trim()) throw httpError(400, 'Question text is required');
   if (text.length > MAX_QUESTION_LENGTH) throw httpError(400, `Question is too long (max ${MAX_QUESTION_LENGTH} characters)`);
 

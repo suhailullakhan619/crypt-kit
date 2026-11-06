@@ -7,14 +7,13 @@
  */
 import Scan from './pages/Scan';
 import MyCheckouts from './pages/MyCheckouts';
-import PrintLabels from './pages/PrintLabels';
 import CheckoutDetail from './pages/CheckoutDetail';
+import { printLabels } from './api/lab';
 
 const appRoutes = [
   { path: 'scan', element: <Scan />, label: 'Scan a label', icon: 'scan-line' },
   { path: 'scan/:tag', element: <Scan /> },
   { path: 'my-checkouts', element: <MyCheckouts />, label: 'My checkouts', icon: 'clipboard-list' },
-  { path: 'labels', element: <PrintLabels />, label: 'Print labels', icon: 'printer', roles: ['Technician'] }, // + LabManager (superuser)
   { path: 'r/checkouts/:id', element: <CheckoutDetail /> },
 ];
 
@@ -36,3 +35,22 @@ export const reportPresets = [
     title: 'Overdue loans',
   },
 ];
+
+/**
+ * Bulk actions on generic list pages (skeleton Req 16.14). Staff select equipment rows and print
+ * QR labels (lab-ledger Req 5.1): A4 sheets, 3 × 8 labels, max 60 per PDF.
+ */
+export const bulkActions = {
+  equipment: [
+    {
+      label: 'Print labels',
+      icon: 'printer',
+      roles: ['Technician'], // LabManager is the superuser and always qualifies
+      run: async ({ api, ids }) => {
+        if (ids.length > 60) throw new Error('Select at most 60 items per label sheet PDF');
+        await printLabels(api, ids);
+        return `Labels for ${ids.length} item${ids.length === 1 ? '' : 's'} downloaded`;
+      },
+    },
+  ],
+};
