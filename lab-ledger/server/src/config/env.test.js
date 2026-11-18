@@ -45,3 +45,62 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ DEMO_MODE: 'true', PORT: '70000' })).toThrow(/PORT/);
   });
 });
+
+describe('loadEnv: database isolation', () => {
+  const base = { MONGODB_URI: 'mongodb://h/real', JWT_SECRET: SECRET };
+
+  test('MONGODB_DB_NAME is passed through and validated', () => {
+    expect(loadEnv({ ...base, MONGODB_DB_NAME: 'lab_ledger_test' }).MONGODB_DB_NAME).toBe('lab_ledger_test');
+    expect(loadEnv(base).MONGODB_DB_NAME).toBeNull();
+    expect(() => loadEnv({ ...base, MONGODB_DB_NAME: 'bad/name' })).toThrow(/MONGODB_DB_NAME/);
+  });
+
+  test('SEED_ON_BOOT on a real database requires a *_test database name', () => {
+    expect(() => loadEnv({ ...base, SEED_ON_BOOT: 'true' })).toThrow(/_test/);
+    expect(() => loadEnv({ ...base, SEED_ON_BOOT: 'true', MONGODB_DB_NAME: 'real' })).toThrow(/_test/);
+    expect(loadEnv({ ...base, SEED_ON_BOOT: 'true', MONGODB_DB_NAME: 'real_test' }).SEED_ON_BOOT).toBe(true);
+  });
+  test('demo mode ignores MONGODB_URI unless DEMO_PERSIST=true', () => {
+    const env = loadEnv({ DEMO_MODE: 'true', MONGODB_URI: 'mongodb://h/real', MONGODB_DB_NAME: 'app_test' });
+    expect(env.MONGODB_URI).toBeNull();
+    expect(env.MONGODB_DB_NAME).toBeNull();
+    expect(env.DEMO_PERSIST).toBe(false);
+  });
+  test('DEMO_PERSIST uses the URI, but only with a *_demo or *_test database name', () => {
+    const demo = { DEMO_MODE: 'true', DEMO_PERSIST: 'true', MONGODB_URI: 'mongodb://h/real' };
+    expect(() => loadEnv({ DEMO_MODE: 'true', DEMO_PERSIST: 'true' })).toThrow(/requires MONGODB_URI/);
+    expect(() => loadEnv(demo)).toThrow(/_demo/);
+    expect(() => loadEnv({ ...demo, MONGODB_DB_NAME: 'real' })).toThrow(/_demo/);
+    expect(() => loadEnv({ ...demo, MONGODB_DB_NAME: 'demo_real' })).toThrow(/_demo/);
+    const env = loadEnv({ ...demo, MONGODB_DB_NAME: 'lab_ledger_demo' });
+    expect(env).toMatchObject({ DEMO_MODE: true, DEMO_PERSIST: true, MONGODB_URI: 'mongodb://h/real', MONGODB_DB_NAME: 'lab_ledger_demo' });
+    expect(loadEnv({ ...demo, MONGODB_DB_NAME: 'lab_ledger_test' }).MONGODB_DB_NAME).toBe('lab_ledger_test');
+  });
+  test('DEMO_PERSIST has no effect outside demo mode', () => {
+    expect(loadEnv({ ...base, DEMO_PERSIST: 'true' }).DEMO_PERSIST).toBe(false);
+  });
+});
+
+describe('loadEnv: TRUST_PROXY', () => {
+  test('defaults to false and is enabled by "true"', () => {
+    expect(loadEnv({ DEMO_MODE: 'true' }).TRUST_PROXY).toBe(false);
+    expect(loadEnv({ DEMO_MODE: 'true', TRUST_PROXY: 'TRUE' }).TRUST_PROXY).toBe(true);
+    expect(loadEnv({ DEMO_MODE: 'true', TRUST_PROXY: 'yes' }).TRUST_PROXY).toBe(false);
+  });
+});
+
+describe('loadEnv: optional owner account', () => {
+  const base = { DEMO_MODE: 'true' };
+  test('is off unless both email and password are set', () => {
+    expect(loadEnv(base).SEED_ADMIN).toBeNull();
+    expect(() => loadEnv({ ...base, SEED_ADMIN_EMAIL: 'me@x.test' })).toThrow(/both SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD/);
+    expect(() => loadEnv({ ...base, SEED_ADMIN_PASSWORD: 'long-enough-1' })).toThrow(/both/);
+  });
+  test('validates the email and password length, and lower-cases the email', () => {
+    expect(() => loadEnv({ ...base, SEED_ADMIN_EMAIL: 'not-an-email', SEED_ADMIN_PASSWORD: 'long-enough-1' })).toThrow(/valid email/);
+    expect(() => loadEnv({ ...base, SEED_ADMIN_EMAIL: 'me@x.test', SEED_ADMIN_PASSWORD: 'short' })).toThrow(/at least 8/);
+    expect(loadEnv({ ...base, SEED_ADMIN_EMAIL: 'Me@X.test', SEED_ADMIN_PASSWORD: 'long-enough-1', SEED_ADMIN_NAME: 'Me' }).SEED_ADMIN)
+      .toEqual({ email: 'me@x.test', password: 'long-enough-1', name: 'Me' });
+    expect(loadEnv({ ...base, SEED_ADMIN_EMAIL: 'me@x.test', SEED_ADMIN_PASSWORD: 'long-enough-1' }).SEED_ADMIN.name).toBe('me');
+  });
+});

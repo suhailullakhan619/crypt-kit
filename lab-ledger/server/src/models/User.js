@@ -7,6 +7,11 @@ const UserSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true, select: false },
   role:         { type: String, enum: config.roles, required: true },
   active:       { type: Boolean, default: true },
+  // Self sign-up: the account stays inactive until a superuser approves it.
+  pendingApproval: { type: Boolean, default: false },
+  // Password reset: only a SHA-256 hash of the emailed token is stored, never the token itself.
+  resetTokenHash:    { type: String, select: false },
+  resetTokenExpires: { type: Date, select: false },
   createdAt:    { type: Date, default: Date.now },
 });
 
@@ -18,6 +23,7 @@ UserSchema.methods.toPublic = function toPublic() {
     email: this.email,
     role: this.role,
     active: this.active,
+    pendingApproval: !!this.pendingApproval,
     createdAt: this.createdAt,
   };
 };

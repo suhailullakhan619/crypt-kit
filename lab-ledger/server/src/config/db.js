@@ -26,8 +26,10 @@ export async function connectDB(env) {
     uri = memoryServer.getUri('crypt-kit');
   }
 
-  await mongoose.connect(uri);
-  return uri.replace(/\/\/[^@/]+@/, '//***@');
+  // `dbName` overrides the database in the URI, so the original database is never opened.
+  await mongoose.connect(uri, env.MONGODB_DB_NAME ? { dbName: env.MONGODB_DB_NAME } : undefined);
+  const shown = uri.replace(/\/\/[^@/]+@/, '//***@');
+  return env.MONGODB_DB_NAME ? `${shown} [db: ${env.MONGODB_DB_NAME}]` : shown;
 }
 
 /** Disconnects Mongoose and stops the in-memory server if one was started. */

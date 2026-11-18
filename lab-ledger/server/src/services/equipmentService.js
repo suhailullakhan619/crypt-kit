@@ -47,6 +47,6 @@ export async function labels(ids) {
   if (docs.length !== unique.length) throw httpError(404, `${unique.length - docs.length} equipment item(s) not found`);
   const byId = new Map(docs.map((d) => [String(d._id), d]));
   const { env, config } = getContext();
-  const buffer = await renderLabels(unique.map((id) => byId.get(id)), { baseUrl: env.CLIENT_URL, appName: config.appName });
+  const buffer = await renderLabels(unique.map((id) => byId.get(id)), { baseUrl: env.CLIENT_URL, appName: config.appName, theme: config.reports?.theme });
   return { buffer, count: unique.length };
 }

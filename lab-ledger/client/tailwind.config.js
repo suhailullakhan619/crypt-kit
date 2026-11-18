@@ -33,6 +33,8 @@ export default {
         pulseGlow: { '0%,100%': { boxShadow: '0 0 0 0 hsl(var(--primary) / 0.55)' }, '50%': { boxShadow: '0 0 0 18px hsl(var(--primary) / 0)' } },
         swirl: { to: { transform: 'rotate(360deg)' } },
         fadeUp: { from: { opacity: 0, transform: 'translateY(6px)' }, to: { opacity: 1, transform: 'none' } },
+        // Dialogs are centred with a translate, so their animation must keep that translate.
+        dialogIn: { from: { opacity: 0, transform: 'translate(-50%, calc(-50% + 8px)) scale(0.98)' }, to: { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' } },
         // Lab Ledger: bubbles rising out of the scanning beaker
         bubble: { '0%': { transform: 'translateY(0) scale(.6)', opacity: 0 }, '20%': { opacity: 0.9 }, '100%': { transform: 'translateY(-90px) scale(1)', opacity: 0 } },
         scanline: { '0%,100%': { top: '12%' }, '50%': { top: '84%' } },
@@ -42,6 +44,7 @@ export default {
         'pulse-glow': 'pulseGlow 1.6s ease-out infinite',
         swirl: 'swirl 1.4s linear infinite',
         'fade-up': 'fadeUp .25s ease-out both',
+        'dialog-in': 'dialogIn .2s ease-out both',
         bubble: 'bubble 2.6s ease-in infinite',
         scanline: 'scanline 2.4s ease-in-out infinite',
       },

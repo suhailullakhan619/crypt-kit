@@ -55,11 +55,23 @@ describe('Scan page (Req 5.2–5.4)', () => {
     expect(screen.getByRole('link', { name: /search equipment/i })).toHaveAttribute('href', '/r/equipment?q=NOPE-1');
   });
 
-  it('falls back to manual tag entry when BarcodeDetector is unavailable', async () => {
+  it('always offers scanning from a photo and typing the tag; the camera only when the device has one', async () => {
     signIn({ role: 'Student', userId: PRIYA });
     renderAt(<Scan />, { path: '/scan', route: '/scan' });
-    expect(await screen.findByLabelText('Asset tag')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /scan with camera/i })).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('Asset tag or link')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /scan from a photo/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /scan with camera/i })).not.toBeInTheDocument(); // jsdom has no camera
+  });
+
+  it('shows the camera button whenever a camera exists, even without the built-in QR detector', async () => {
+    signIn({ role: 'Student', userId: PRIYA });
+    Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: async () => { throw new Error('no'); } }, configurable: true });
+    try {
+      renderAt(<Scan />, { path: '/scan', route: '/scan' });
+      expect(await screen.findByRole('button', { name: /scan with camera/i })).toBeInTheDocument();
+    } finally {
+      delete navigator.mediaDevices;
+    }
   });
 
   it('extracts tags from scanned label URLs', () => {

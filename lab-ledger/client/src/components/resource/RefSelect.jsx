@@ -5,6 +5,7 @@ import { useMeta } from '../../context/MetaContext';
 import { searchUsers } from '../../api/users';
 import { listRecords } from '../../api/resources';
 import { Select } from '../ui/select';
+import { recordTitle } from '../../lib/format';
 
 /**
  * Select for a `ref` field: loads Users or records of the target resource (title field as label).
@@ -21,7 +22,7 @@ export const RefSelect = forwardRef(function RefSelect({ field, placeholder = 'N
     queryFn: async () =>
       field.ref === 'User'
         ? searchUsers(api, '')
-        : (await listRecords(api, field.ref, { limit: 100, sort: titleField })).items.map((i) => ({ _id: i._id, name: i[titleField] ?? i._id })),
+        : (await listRecords(api, field.ref, { limit: 100, sort: titleField })).items.map((i) => ({ _id: i._id, name: target ? recordTitle(target, i) : (i[titleField] ?? i._id) })),
     staleTime: 60_000,
     enabled: field.ref === 'User' || !!target,
   });

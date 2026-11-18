@@ -36,3 +36,29 @@ export const me = asyncHandler(async (req, res) => {
   const user = await authService.getMe(req.user.userId);
   res.status(200).json({ user });
 });
+
+/**
+ * POST /api/auth/change-password
+ * Body: { currentPassword, newPassword } → 204
+ */
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body ?? {};
+  await authService.changePassword(req.user.userId, currentPassword, newPassword);
+  res.status(204).end();
+});
+/** POST /api/auth/signup { name, email, password } → 201 { pending: true, email } */
+export const signup = asyncHandler(async (req, res) => {
+  res.status(201).json(await authService.signup(req.body ?? {}));
+});
+
+/** POST /api/auth/forgot-password { email } → 200 (same answer whether or not the email exists) */
+export const forgotPassword = asyncHandler(async (req, res) => {
+  await authService.requestPasswordReset(req.body?.email);
+  res.status(200).json({ message: 'If an account uses that email, a reset link is on its way. Check your spam folder too.' });
+});
+
+/** POST /api/auth/reset-password { token, password } → 204 */
+export const resetPassword = asyncHandler(async (req, res) => {
+  await authService.resetPassword(req.body?.token, req.body?.password);
+  res.status(204).end();
+});

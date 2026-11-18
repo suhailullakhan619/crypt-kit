@@ -89,7 +89,7 @@ try {
 
   const meta = await call('GET', '/meta', { token: tok.student });
   const keys = (meta.json?.resources ?? []).map((r) => r.key).sort().join(',');
-  check('meta: lab resources (no notes)', keys === 'calibrations,checkouts,equipment,labs', keys);
+  check('meta: lab resources (no notes)', keys === 'calibrations,checkouts,equipment,labs,reservations', keys);
 
   // ── Equipment CRUD permissions ──────────────────────────────────────────────
   check('student creates equipment → 403', (await call('POST', '/r/equipment', { token: tok.student, body: { name: 'X', assetTag: 'SMK-1' } })).status === 403);

@@ -35,6 +35,10 @@ The login page shows one-click buttons for these accounts.
 | **Calibrations** (`calibrations`) | equipment, performedAt, performedBy, result (Pass/Adjusted/Fail), certificateNo, notes | Technician/LabManager create; hooks reject future dates and schedule `nextCalibration = performedAt + interval`; Fail → Maintenance, a pass clears CalibrationDue |
 | **Checkouts** (`checkouts`) | equipment, borrower, status, purpose, dueBack, approvedBy, checkedOutAt, receivedBy, returnedAt, returnCondition, rejectReason | every status is workflow-only; generic writes LabManager-only; due rule `dueBack` → `Overdue`; partial unique index = at most one Active/Overdue loan per item |
 
+**Reservations** (`reservations`): book an item for a time window ahead of time. Students and Technicians book for themselves; windows for the same item may not overlap (HTTP 409, also under concurrent requests); a booking lasts at most 14 days and opens at most 90 days ahead; only the owner or staff can cancel, nothing else can be edited. Finished bookings become `Completed` automatically, without notifications.
+
+**Insights** (`/insights`, Technician and LabManager): the most and least used equipment (loans and days out, including items never borrowed) over 30, 90 or 365 days, and a list of borrowers with late or overdue loans. *Download PDF* stores the report with the others. API: `GET /api/insights`, `POST /api/insights/report`.
+
 ## Workflows
 
 ```
@@ -109,7 +113,7 @@ The server runs two Jest projects. **core** runs the skeleton's suites unchanged
 
 ## Screenshots
 
-_Placeholders — add captures before submission._
+_Captured from a real browser run (Chrome, demo data). Still missing: `lab-labels.png`, the printed QR label sheet._
 
 - `docs/screenshots/lab-dashboard.png` — dashboard with the *Out right now* panel
 - `docs/screenshots/lab-scan-mobile.png` — scan result card at 375 px

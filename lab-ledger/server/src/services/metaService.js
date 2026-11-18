@@ -9,7 +9,7 @@ const humanise = (name) =>
  */
 function publicField(name, spec) {
   const out = { name, type: spec.type, label: spec.label ?? humanise(name) };
-  for (const k of ['required', 'list', 'filter', 'search', 'min', 'max', 'values', 'multiple', 'ref', 'default', 'help', 'placeholder', 'unique']) {
+  for (const k of ['required', 'list', 'filter', 'search', 'min', 'max', 'values', 'multiple', 'ref', 'default', 'help', 'placeholder', 'unique', 'time', 'formHidden']) {
     if (spec[k] !== undefined) out[k] = spec[k];
   }
   return out;
@@ -85,5 +85,8 @@ export function buildPublicMeta(config, env) {
     demo: env.DEMO_MODE,
     voiceProvider: env.VOICE_PROVIDER,
     demoUsers: env.DEMO_MODE ? (config.demoUsers ?? []).map(({ name, email, role }) => ({ name, email, role })) : [],
+    // What the login page may offer: a sign-up link, and "Forgot password" only when email can be sent.
+    signup: config.signup?.enabled !== false,
+    passwordReset: !!env.MAIL,
   };
 }

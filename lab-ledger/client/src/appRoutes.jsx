@@ -8,6 +8,7 @@
 import Scan from './pages/Scan';
 import MyCheckouts from './pages/MyCheckouts';
 import CheckoutDetail from './pages/CheckoutDetail';
+import Insights from './pages/Insights';
 import { printLabels } from './api/lab';
 
 const appRoutes = [
@@ -15,6 +16,7 @@ const appRoutes = [
   { path: 'scan/:tag', element: <Scan /> },
   { path: 'my-checkouts', element: <MyCheckouts />, label: 'My checkouts', icon: 'clipboard-list' },
   { path: 'r/checkouts/:id', element: <CheckoutDetail /> },
+  { path: 'insights', element: <Insights />, label: 'Insights', icon: 'chart-column', roles: ['Technician'] },
 ];
 
 export default appRoutes;

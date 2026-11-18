@@ -15,8 +15,12 @@ import { ResourceForm } from '../components/resource/ResourceForm';
 import { StatusBadge } from '../components/resource/StatusBadge';
 import { ActivityTimeline } from '../components/resource/ActivityTimeline';
 import { EmptyCrypt } from '../components/spooky';
-import { displayValue, formatDateTime } from '../lib/format';
+import { displayValue, formatDateTime, recordTitle } from '../lib/format';
 import { errorMessage, humanise } from '../lib/utils';
+import { RecordQrCard } from '../components/qr/RecordQrCard';
+import qrCodes from '../qrCodes';
+
+const isDeletedRecord = (resource, item) => !!resource.softDelete && item[resource.softDelete.field] === resource.softDelete.value;
 
 // App detail panels: client/src/detail/<resourceKey>.jsx receives { record, resource } (Req 16.13).
 const detailPanels = import.meta.glob('../detail/*.jsx', { eager: true });
@@ -64,6 +68,8 @@ export default function ResourceDetail() {
 
   const item = record.data;
   const DetailPanel = detailPanelFor(key);
+  // QR code for physical items (client/src/qrCodes.js); none for archived records.
+  const qr = !isDeletedRecord(resource, item) && qrCodes[key] ? qrCodes[key].target(item) : null;
   const titleField = resource.titleField ?? resource.fields[0]?.name;
   const statusField = resource.statusFlow?.field ?? resource.due?.status ?? resource.softDelete?.field;
   const current = statusField ? item[statusField] : null;
@@ -90,7 +96,7 @@ export default function ResourceDetail() {
         <ArrowLeft className="h-4 w-4" aria-hidden /> {resource.label}
       </Link>
       <PageHeader
-        title={displayValue({}, item[titleField])}
+        title={recordTitle(resource, item)}
         description={<span className="flex flex-wrap items-center gap-2">{current && <StatusBadge value={current} resource={resource} />}<span>Created {formatDateTime(item.createdAt)}{item.createdBy?.name ? ` by ${item.createdBy.name}` : ''}</span></span>}
         actions={
           <>
@@ -130,16 +136,19 @@ export default function ResourceDetail() {
         </Card>
         {DetailPanel && <DetailPanel record={item} resource={resource} />}
         </div>
-        <Card>
-          <CardHeader><CardTitle>History</CardTitle></CardHeader>
-          <CardContent>{activity.isLoading ? <Skeleton className="h-32 w-full" /> : <ActivityTimeline items={activity.data} />}</CardContent>
-        </Card>
+        <div className="flex flex-col gap-4">
+          {qr && <RecordQrCard path={qr.path} caption={qr.caption} title={recordTitle(resource, item)} appName={meta.appName} />}
+          <Card>
+            <CardHeader><CardTitle>History</CardTitle></CardHeader>
+            <CardContent>{activity.isLoading ? <Skeleton className="h-32 w-full" /> : <ActivityTimeline items={activity.data} />}</CardContent>
+          </Card>
+        </div>
       </div>
 
       <Dialog open={editing} onOpenChange={setEditing}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit {displayValue({}, item[titleField])}</DialogTitle>
+            <DialogTitle>Edit {recordTitle(resource, item)}</DialogTitle>
             <DialogDescription>Status changes use the “Move to” buttons.</DialogDescription>
           </DialogHeader>
           <ResourceForm resource={resource} initial={item} onSubmit={save} onCancel={() => setEditing(false)} />
