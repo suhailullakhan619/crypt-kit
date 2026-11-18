@@ -96,7 +96,7 @@ None of these require editing `core/`.
 | Custom PDF reports | `reportService.createReport({ title, resource, user, count, render(doc, h) })` |
 | Extra pages / sidebar links | `client/src/appRoutes.jsx` |
 | Demo data | `server/src/seed/data/<resource>.js` → `{ resource, records(ctx) }` |
-| Re-skin | `client/src/theme/tokens.css` and the `Logo` in `client/src/components/spooky` |
+| Re-skin | `client/src/theme/tokens.css` and the `Logo` in `client/src/components/spooky`. Also copy the light palette into `reports.theme` in `crypt.config.js` so PDFs match; `pdfTheme.test.js` fails if the two drift apart |
 
 ## Raise a new app
 

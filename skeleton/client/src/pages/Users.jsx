@@ -10,7 +10,7 @@ import { listUsers, createUser, updateUser } from '../api/users';
 import { PageHeader } from '../components/layout/AppShell';
 import { Card, Skeleton, Table, THead, TBody, TR, TH, TD, Badge } from '../components/ui/display';
 import { Button } from '../components/ui/button';
-import { Input, Label } from '../components/ui/input';
+import { Input, PasswordInput, Label } from '../components/ui/input';
 import { Select, Switch } from '../components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { errorMessage } from '../lib/utils';
@@ -37,7 +37,9 @@ function NewUserDialog({ open, onOpenChange, roles }) {
   const field = (name, label, props = {}) => (
     <div className="flex flex-col gap-2">
       <Label htmlFor={`nu-${name}`}>{label}</Label>
-      <Input id={`nu-${name}`} aria-invalid={!!errors[name]} {...props} {...register(name, { required: `${label} is required` })} />
+      {props.type === 'password'
+        ? <PasswordInput id={`nu-${name}`} aria-invalid={!!errors[name]} {...props} {...register(name, { required: `${label} is required` })} />
+        : <Input id={`nu-${name}`} aria-invalid={!!errors[name]} {...props} {...register(name, { required: `${label} is required` })} />}
       {errors[name] && <p role="alert" className="text-xs text-destructive">{errors[name].message}</p>}
     </div>
   );
@@ -103,6 +105,7 @@ export default function Users() {
                   <TR key={u._id}>
                     <TD className="font-medium">
                       {u.name} {self && <Badge variant="muted">you</Badge>}
+                      {u.pendingApproval && <Badge variant="warning" className="ml-1">Waiting for approval</Badge>}
                       <div className="text-xs font-normal text-muted-foreground sm:hidden">{u.email}</div>
                     </TD>
                     <TD className="hidden text-muted-foreground sm:table-cell">{u.email}</TD>
@@ -113,8 +116,12 @@ export default function Users() {
                       </Select>
                     </TD>
                     <TD>
+                      {u.pendingApproval ? (
+                        <Button size="sm" disabled={update.isPending} onClick={() => update.mutate({ id: u._id, body: { active: true } })}>Approve</Button>
+                      ) : (
                       <Switch aria-label={`${u.active ? 'Deactivate' : 'Activate'} ${u.name}`} checked={u.active} disabled={self || update.isPending}
                         onCheckedChange={(v) => update.mutate({ id: u._id, body: { active: v } })} />
+                      )}
                     </TD>
                   </TR>
                 );

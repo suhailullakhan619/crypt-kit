@@ -59,10 +59,77 @@ export function loadEnv(src = {}) {
   }
   const VOICE_PROVIDER = voiceRaw ?? (OPENAI_API_KEY ? 'openai' : 'browser');
 
+  // Optional database-name override. Mongoose uses it instead of the name in MONGODB_URI, so the same
+  // cluster URI can serve a separate "<app>_test" database and the original database is never touched.
+  const MONGODB_DB_NAME = str('MONGODB_DB_NAME');
+  if (MONGODB_DB_NAME && !/^[A-Za-z0-9_-]{1,63}$/.test(MONGODB_DB_NAME)) {
+    throw new EnvError('MONGODB_DB_NAME may only contain letters, digits, "_" and "-" (max 63 characters)');
+  }
+
+  // Seeding a real (non-demo) database is opt-in and only allowed into a database whose name ends in "_test".
+  const SEED_ON_BOOT = str('SEED_ON_BOOT')?.toLowerCase() === 'true';
+  if (SEED_ON_BOOT && !DEMO_MODE && !(MONGODB_DB_NAME && MONGODB_DB_NAME.endsWith('_test'))) {
+    throw new EnvError('SEED_ON_BOOT=true requires MONGODB_DB_NAME ending in "_test" (protects real data)');
+  }
+
+  // DEMO_PERSIST=true keeps demo data in MONGODB_URI instead of an in-memory server (for hosts that
+  // cannot run mongod). Demo mode seeds and allows one-click logins, so only a "_demo"/"_test" database.
+  const DEMO_PERSIST = DEMO_MODE && str('DEMO_PERSIST')?.toLowerCase() === 'true';
+  if (DEMO_PERSIST && !MONGODB_URI) {
+    throw new EnvError('DEMO_PERSIST=true requires MONGODB_URI');
+  }
+  if (DEMO_PERSIST && !(MONGODB_DB_NAME && /_(demo|test)$/.test(MONGODB_DB_NAME))) {
+    throw new EnvError('DEMO_PERSIST=true requires MONGODB_DB_NAME ending in "_demo" or "_test" (protects real data)');
+  }
+  const useUri = !DEMO_MODE || DEMO_PERSIST;
+
+  // Behind a reverse proxy (Render, Railway, Heroku...) set TRUST_PROXY=true so rate limits see the
+  // visitor's address from X-Forwarded-For instead of the proxy's. Trusts exactly one hop.
+  const TRUST_PROXY = str('TRUST_PROXY')?.toLowerCase() === 'true';
+
+  // Optional email. All of host, user, password and sender are needed; otherwise email stays off and
+  // notifications remain in-app only. A half-filled setup is reported, not silently ignored.
+  const smtp = { host: str('SMTP_HOST'), user: str('SMTP_USER'), pass: str('SMTP_PASS'), from: str('MAIL_FROM') };
+  const smtpSet = Object.values(smtp).filter(Boolean).length;
+  if (smtpSet > 0 && smtpSet < 4) {
+    const missing = Object.entries({ SMTP_HOST: smtp.host, SMTP_USER: smtp.user, SMTP_PASS: smtp.pass, MAIL_FROM: smtp.from }).filter(([, v]) => !v).map(([k]) => k);
+    throw new EnvError('Email is partly configured. Also set: ' + missing.join(', ') + ' (or clear the other SMTP_* / MAIL_FROM values)');
+  }
+  const smtpPort = Number(str('SMTP_PORT') ?? '587');
+  if (smtpSet === 4 && (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535)) {
+    throw new EnvError('SMTP_PORT must be an integer between 1 and 65535');
+  }
+  // MAIL_ALLOW_TEST_DOMAINS=true only for a local fake mail server: lets .test/.example addresses through.
+  const MAIL = smtpSet === 4
+    ? { host: smtp.host, port: smtpPort, user: smtp.user, pass: smtp.pass, from: smtp.from, replyTo: str('MAIL_REPLY_TO'), allowTestDomains: str('MAIL_ALLOW_TEST_DOMAINS')?.toLowerCase() === 'true' }
+    : null;
+  // Optional owner account created by the seed (the superuser role). Kept in .env, never in code,
+  // so the password is not committed. Both email and password are needed.
+  const adminEmail = str('SEED_ADMIN_EMAIL');
+  const adminPassword = str('SEED_ADMIN_PASSWORD');
+  if (!!adminEmail !== !!adminPassword) {
+    throw new EnvError('Set both SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD, or neither');
+  }
+  if (adminEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+    throw new EnvError(`SEED_ADMIN_EMAIL is not a valid email address (got "${adminEmail}")`);
+  }
+  if (adminPassword && adminPassword.length < 8) {
+    throw new EnvError('SEED_ADMIN_PASSWORD must be at least 8 characters');
+  }
+  const SEED_ADMIN = adminEmail
+    ? { email: adminEmail.toLowerCase(), password: adminPassword, name: str('SEED_ADMIN_NAME') ?? adminEmail.split('@')[0] }
+    : null;
+
   return Object.freeze({
     PORT,
-    // In demo mode the in-memory server is used unless a URI is given explicitly AND DEMO_MODE is off.
-    MONGODB_URI: DEMO_MODE ? null : MONGODB_URI,
+    MAIL,
+    SEED_ADMIN,
+    MONGODB_DB_NAME: useUri ? MONGODB_DB_NAME : null,
+    SEED_ON_BOOT,
+    // Demo mode uses the in-memory server (MONGODB_URI null) unless DEMO_PERSIST=true.
+    MONGODB_URI: useUri ? MONGODB_URI : null,
+    DEMO_PERSIST,
+    TRUST_PROXY,
     JWT_SECRET,
     CLIENT_URL: str('CLIENT_URL') ?? 'http://localhost:5173',
     DEMO_MODE,

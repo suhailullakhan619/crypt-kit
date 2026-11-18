@@ -4,11 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { LogOut, Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Button } from '../ui/button';
-import { Sheet, SheetContent } from '../ui/dialog';
+import { Sheet, SheetContent, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { ThemeToggle } from '../../theme/ThemeToggle';
 import { MetaProvider, useMeta } from '../../context/MetaContext';
 import { useAuth } from '../../context/AuthContext';
 import { Logo } from '../spooky';
+import { NotificationBell } from './NotificationBell';
+import { ChangePasswordDialog } from './ChangePasswordDialog';
 
 function Topbar({ onMenu }) {
   const { logout } = useAuth();
@@ -16,7 +18,9 @@ function Topbar({ onMenu }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const signOut = () => {
+    setConfirmOpen(false);
     logout();
     qc.clear();
     navigate('/login', { replace: true });
@@ -32,12 +36,26 @@ function Topbar({ onMenu }) {
         <span className="font-display font-semibold">{appName}</span>
       </div>
       <div className="ml-auto flex items-center gap-1">
+        <NotificationBell />
         <ThemeToggle />
-        <Button variant="ghost" size="sm" onClick={signOut}>
+        <ChangePasswordDialog />
+        <Button variant="ghost" size="sm" onClick={() => setConfirmOpen(true)} aria-label="Sign out">
           <LogOut className="h-4 w-4" aria-hidden />
           <span className="hidden sm:inline">Sign out</span>
         </Button>
       </div>
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign out?</DialogTitle>
+            <DialogDescription>Are you sure you want to sign out of {appName}?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button onClick={signOut}><LogOut className="h-4 w-4" aria-hidden /> Sign out</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

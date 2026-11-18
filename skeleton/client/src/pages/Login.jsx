@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -9,7 +9,7 @@ import { usePublicMeta } from '../context/MetaContext';
 import { useApi } from '../hooks/useApi';
 import { login as apiLogin, demoLogin } from '../api/auth';
 import { Button } from '../components/ui/button';
-import { Input, Label } from '../components/ui/input';
+import { Input, PasswordInput, Label } from '../components/ui/input';
 import { Card } from '../components/ui/display';
 import { Logo } from '../components/spooky';
 import { ThemeToggle } from '../theme/ThemeToggle';
@@ -76,13 +76,21 @@ export default function Login() {
               {errors.email && <p role="alert" className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" autoComplete="current-password" aria-invalid={!!errors.password}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {pub?.passwordReset && <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link>}
+              </div>
+              <PasswordInput id="password" autoComplete="current-password" aria-invalid={!!errors.password}
                 {...register('password', { required: 'Password is required' })} />
               {errors.password && <p role="alert" className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
             <Button type="submit" size="lg" disabled={isSubmitting}>{isSubmitting ? 'Opening the crypt…' : 'Sign in'}</Button>
           </form>
+          {pub?.signup && (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              No account yet? <Link to="/signup" className="font-medium text-primary hover:underline">Create an account</Link>
+            </p>
+          )}
 
           {pub?.demo && pub.demoUsers?.length > 0 && (
             <div className="mt-6 border-t pt-5">

@@ -29,7 +29,7 @@ export function timeAgo(v, now = Date.now()) {
 export function displayValue(field, value) {
   if (value === null || value === undefined || value === '') return '—';
   switch (field?.type) {
-    case 'date': return formatDate(value);
+    case 'date': return field.time ? formatDateTime(value) : formatDate(value);
     case 'boolean': return value ? 'Yes' : 'No';
     case 'enum': return Array.isArray(value) ? (value.length ? value.map(humanise).join(', ') : '—') : humanise(value);
     case 'ref': return typeof value === 'object' ? value.name ?? value.title ?? value.code ?? '—' : String(value);
@@ -37,10 +37,30 @@ export function displayValue(field, value) {
   }
 }
 
+/** ISO timestamp -> 'YYYY-MM-DDTHH:mm' in the browser's time zone, for <input type=datetime-local>. */
+export function toLocalInput(v) {
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 /** Value suitable for an <input> of the field's type. */
 export function inputValue(field, value) {
   if (value === null || value === undefined) return field.type === 'boolean' ? false : field.type === 'enum' && field.multiple ? [] : '';
+  if (field.type === 'date' && field.time) return toLocalInput(value);
   if (field.type === 'date') return String(value).slice(0, 10);
   if (field.type === 'ref') return typeof value === 'object' ? String(value._id ?? '') : String(value);
   return value;
+}
+
+/**
+ * Human title of a record: the title field rendered with its own field type, so a title that is a
+ * reference (a calibration's equipment, a loan's item) shows the target's name, never "[object Object]".
+ */
+export function recordTitle(resource, item) {
+  const name = resource?.titleField ?? resource?.fields?.[0]?.name;
+  const spec = resource?.fields?.find((f) => f.name === name) ?? {};
+  const text = displayValue(spec, item?.[name]);
+  return text === '—' ? 'Untitled' : text;
 }

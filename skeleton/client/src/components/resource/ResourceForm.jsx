@@ -8,6 +8,7 @@ export function editableFields(resource, { editing }) {
   const flowField = resource.statusFlow?.field;
   const locked = new Set(resource.statusFlow?.workflowOnly ?? []);
   return resource.fields.filter((f) => {
+    if (f.formHidden) return false; // set by the server (hooks/workflow); still shown in lists and details
     if (editing && f.name === flowField) return false; // status changes go through transition buttons
     if (!editing && f.name === flowField && f.values?.every((v) => locked.has(v))) return false;
     return true;
@@ -20,6 +21,8 @@ function toBody(fields, values) {
   for (const f of fields) {
     let v = values[f.name];
     if (v === '' || v === undefined) v = null;
+    // datetime-local has no zone: read it in the browser's zone and send an unambiguous ISO instant.
+    if (v && f.type === 'date' && f.time) { const d = new Date(v); v = Number.isNaN(d.getTime()) ? v : d.toISOString(); }
     body[f.name] = v;
   }
   return body;

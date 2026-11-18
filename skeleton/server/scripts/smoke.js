@@ -48,7 +48,8 @@ try {
   check('GET /auth/me', me.status === 200 && me.json.user.role === 'Admin' && !('passwordHash' in me.json.user));
 
   const users = await call('GET', '/users', { token: admin.json?.token });
-  check('admin lists users', users.status === 200 && users.json.total === 3, `total=${users.json?.total}`);
+  // 3 demo users, plus the owner when SEED_ADMIN_EMAIL is set in server/.env.
+  check('admin lists users', users.status === 200 && [3, 4].includes(users.json.total), `total=${users.json?.total}`);
 
   const bad = await call('POST', '/auth/login', { body: { email: 'admin@crypt.test', password: 'wrong' } });
   check('wrong password → 401', bad.status === 401);

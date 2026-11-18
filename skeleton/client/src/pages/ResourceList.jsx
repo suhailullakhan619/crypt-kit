@@ -13,6 +13,8 @@ import { Input, Label } from '../components/ui/input';
 import { Button, buttonVariants } from '../components/ui/button';
 import { ResourceFilters } from '../components/resource/ResourceFilters';
 import { ResourceTable } from '../components/resource/ResourceTable';
+import { ExportButton, ImportButton } from '../components/resource/ImportExport';
+import { SavedViews } from '../components/resource/SavedViews';
 import { ResourceIcon, EmptyCrypt } from '../components/spooky';
 import NotFound from './NotFound';
 import { bulkActions } from '../appRoutes';
@@ -72,7 +74,7 @@ export default function ResourceList() {
   const runAction = async (action) => {
     setRunning(action.label);
     try {
-      const msg = await action.run({ api, ids: [...selected], items: selectedItems });
+      const msg = await action.run({ api, ids: [...selected], items: selectedItems, resource, appName: meta.appName });
       if (typeof msg === 'string') toast.success(msg);
     } catch (err) {
       toast.error(errorMessage(err));
@@ -87,10 +89,16 @@ export default function ResourceList() {
         icon={<ResourceIcon name={resource.icon} className="h-6 w-6 text-primary" />}
         title={resource.label}
         description={data ? `${data.total} record${data.total === 1 ? '' : 's'}` : ' '}
-        actions={can(key, 'create') && (
-          <Link to={`/r/${key}/new`} className={buttonVariants()}>
-            <Plus className="h-4 w-4" aria-hidden /> New {resource.label.replace(/s$/, '').toLowerCase()}
-          </Link>
+        actions={(
+          <div className="flex flex-wrap items-center gap-2">
+            {can(key, 'read') && <ExportButton resourceKey={key} params={Object.fromEntries([...params.entries()].filter(([k]) => k !== 'page'))} />}
+            {can(key, 'create') && <ImportButton resource={resource} />}
+            {can(key, 'create') && (
+              <Link to={`/r/${key}/new`} className={buttonVariants()}>
+                <Plus className="h-4 w-4" aria-hidden /> New {resource.label.replace(/s$/, '').toLowerCase()}
+              </Link>
+            )}
+          </div>
         )}
       />
 
@@ -109,6 +117,8 @@ export default function ResourceList() {
           <Button variant="ghost" size="sm" onClick={() => setFilters({})}><X className="h-4 w-4" aria-hidden /> Clear</Button>
         )}
       </Card>
+
+      <SavedViews key={key} resourceKey={key} params={params} onApply={(p) => { setQ(p.get('q') ?? ''); setParams(p); }} />
 
       {actions.length > 0 && selected.size > 0 && (
         <Card role="region" aria-label="Bulk actions" className="sticky top-16 z-20 mb-3 flex flex-wrap items-center gap-2 border-primary/40 bg-card/95 p-3 backdrop-blur">

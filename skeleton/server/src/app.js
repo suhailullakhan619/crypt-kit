@@ -12,6 +12,8 @@ import { errorHandler, apiNotFound } from './middleware/errorHandler.js';
 export async function createApp() {
   const { env } = getContext();
   const app = express();
+  // Behind one reverse proxy (TRUST_PROXY=true) req.ip is the visitor, so rate limits work per visitor.
+  if (env.TRUST_PROXY) app.set('trust proxy', 1);
 
   // ── Security headers ────────────────────────────────────────────────────────
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));

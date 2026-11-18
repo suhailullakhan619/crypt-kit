@@ -1,5 +1,7 @@
 import * as resourceService from '../services/resourceService.js';
 import * as activityService from '../services/activityService.js';
+import * as csvService from '../services/csvService.js';
+import * as csvImportService from '../services/csvImportService.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { OBJECT_ID_RE } from '../core/fieldTypes.js';
@@ -7,6 +9,24 @@ import { OBJECT_ID_RE } from '../core/fieldTypes.js';
 /** GET /api/r/:key → 200 { items, total, page, pages } */
 export const list = asyncHandler(async (req, res) => {
   res.status(200).json(await resourceService.list(req.resource, req.query, req.user));
+});
+
+/** GET /api/r/:key/export → 200 text/csv attachment (same filters/search/sort as the list) */
+export const exportCsv = asyncHandler(async (req, res) => {
+  const { csv } = await csvService.exportCsv(req.resource, req.query, req.user);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${req.resource.key}.csv"`);
+  res.status(200).send(csv);
+});
+
+/**
+ * POST /api/r/:key/import  body { csv, dryRun? } → 200 report. `dryRun` defaults to true, so a
+ * caller must pass `dryRun: false` explicitly to write anything.
+ */
+export const importCsv = asyncHandler(async (req, res) => {
+  const { csv, dryRun } = req.body ?? {};
+  if (typeof csv !== 'string' || !csv.trim()) throw httpError(400, 'Body must include a "csv" string');
+  res.status(200).json(await csvImportService.importCsv(req.resource, csv, req.user, { dryRun: dryRun !== false }));
 });
 
 /** POST /api/r/:key → 201 { item } */

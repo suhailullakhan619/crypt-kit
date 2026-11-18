@@ -23,7 +23,7 @@ export function FieldInput({ field, control, register, error }) {
       control_ = <Input {...common} type="number" inputMode="decimal" min={field.min} max={field.max} step="any" {...register(field.name, { ...rules, setValueAs: (v) => (v === '' || v === null ? null : Number(v)) })} />;
       break;
     case 'date':
-      control_ = <Input {...common} type="date" {...register(field.name, rules)} />;
+      control_ = <Input {...common} type={field.time ? 'datetime-local' : 'date'} {...register(field.name, rules)} />;
       break;
     case 'boolean':
       control_ = (

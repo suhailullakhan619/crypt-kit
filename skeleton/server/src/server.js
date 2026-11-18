@@ -26,7 +26,7 @@ async function main() {
   }
 
   const uri = await connectDB(env);
-  console.log(`🪦 MongoDB connected: ${env.DEMO_MODE ? 'in-memory (demo mode)' : uri}`);
+  console.log(`🪦 MongoDB connected: ${env.DEMO_MODE && !env.MONGODB_URI ? 'in-memory (demo mode)' : uri}`);
 
   const registry = await loadResources();
   console.log(`📜 Resources: ${registry.keys().join(', ') || '(none)'}`);
@@ -34,7 +34,7 @@ async function main() {
   console.log(`🔮 Voice intents: ${intents.length}`);
   setContext({ env, config, registry, intents });
 
-  if (env.DEMO_MODE) {
+  if (env.DEMO_MODE || env.SEED_ON_BOOT) {
     await runSeed(registry, { log: (m) => console.log(m) });
   }
 

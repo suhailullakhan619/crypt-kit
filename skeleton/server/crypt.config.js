@@ -13,6 +13,16 @@ const config = {
   reports: {
     organization: 'Crypt Kit Demo Coven',
     timeZone: 'UTC',
+    // PDF colours: the light palette of client/src/theme/tokens.css (Crypt theme), so reports match
+    // the portal. pdfTheme.test.js fails if these drift from tokens.css.
+    theme: {
+      primary: '#c04b0c',
+      primaryForeground: '#fdfbf7',
+      ink: '#1c1627',
+      muted: '#5a5464',
+      border: '#ded8cf',
+      zebra: '#ede9e3',
+    },
   },
   demoUsers: [
     { name: 'Morticia Admin', email: 'admin@crypt.test', password: 'crypt-admin-demo', role: 'Admin' },

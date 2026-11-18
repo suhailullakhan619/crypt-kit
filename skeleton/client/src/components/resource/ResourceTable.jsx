@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { Table, THead, TBody, TR, TH, TD } from '../ui/display';
 import { StatusBadge } from './StatusBadge';
-import { displayValue } from '../../lib/format';
+import { displayValue, recordTitle } from '../../lib/format';
 import { cn } from '../../lib/utils';
 
 /** Fields shown as columns: `list: true` (falls back to the first four fields). */
@@ -58,7 +58,7 @@ export function ResourceTable({ resource, items, selected, onSelectedChange }) {
     else allIds.forEach((id) => next.add(id));
     onSelectedChange(next);
   };
-  const nameOf = (item) => displayValue({}, item[title]);
+  const nameOf = (item) => recordTitle(resource, item);
 
   return (
     <>

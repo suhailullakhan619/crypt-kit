@@ -2,6 +2,9 @@ import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute, SuperuserOnly } from './components/layout/ProtectedRoute';
 import { AppShell } from './components/layout/AppShell';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import ResourceList from './pages/ResourceList';
 import ResourceCreate from './pages/ResourceCreate';
@@ -17,6 +20,9 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         element={
           <ProtectedRoute>

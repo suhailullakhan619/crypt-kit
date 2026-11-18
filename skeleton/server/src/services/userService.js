@@ -3,6 +3,8 @@ import config from '../../crypt.config.js';
 import { hashPassword } from './authService.js';
 import { httpError } from '../utils/httpError.js';
 import { paginate } from '../utils/pagination.js';
+import { getEnv } from '../config/env.js';
+import { sendMail, renderNotificationEmail } from './mailService.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -78,7 +80,21 @@ export async function updateUser(id, changes = {}, actor) {
     user.active = changes.active;
   }
 
+  // Switching on an account that signed itself up approves it: clear the flag and tell the person.
+  const approved = user.active === true && user.pendingApproval;
+  if (approved) user.pendingApproval = false;
+
   await user.save();
+  if (approved) {
+    const base = String(getEnv().CLIENT_URL ?? '').replace(/\/$/, '');
+    const { text, html } = renderNotificationEmail({
+      title: `Your ${config.appName} account is approved`,
+      body: `You can now sign in as ${user.role}.`,
+      url: base ? `${base}/login` : '',
+      appName: config.appName,
+    });
+    await sendMail({ to: user.email, subject: `[${config.appName}] Your account is approved`, text, html });
+  }
   return user.toPublic();
 }
 

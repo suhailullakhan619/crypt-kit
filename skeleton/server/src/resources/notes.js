@@ -1,4 +1,5 @@
 import { defineResource } from '../core/defineResource.js';
+import { nextCode } from '../utils/itemCode.js';
 
 /**
  * Example resource shipped with the skeleton. Delete or replace it in your app.
@@ -10,6 +11,7 @@ export default defineResource({
   icon: 'scroll-text',
   titleField: 'title',
   fields: {
+    code:    { type: 'string', label: 'ID', unique: true, max: 16, list: true, search: true, formHidden: true, help: 'Generated automatically (N-0001). Printed under the QR code.' },
     title:   { type: 'string', label: 'Title', required: true, max: 120, list: true, search: true },
     body:    { type: 'text', label: 'Body', search: true },
     status:  { type: 'enum', label: 'Status', values: ['Open', 'Done', 'Overdue', 'Archived'], default: 'Open', list: true, filter: true },
@@ -39,4 +41,9 @@ export default defineResource({
   report: { columns: ['title', 'status', 'priority', 'owner', 'dueDate'] },
   voice: { synonyms: ['notes', 'tasks', 'to-dos'] },
   defaultSort: '-createdAt',
+  hooks: {
+    // Short ID for "Scan or find" and QR labels; always generated here and never changed.
+    beforeCreate: async (d, ctx) => ({ ...d, code: await nextCode(ctx.registry.get('notes').model, 'code', 'N', ctx.session) }),
+    beforeUpdate: (_doc, { code: _permanent, ...changes }) => changes,
+  },
 });
