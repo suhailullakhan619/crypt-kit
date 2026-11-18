@@ -12,7 +12,7 @@ import { runSeed } from './index.js';
 try {
   const env = getEnv();
   if (env.DEMO_MODE) {
-    console.log('DEMO_MODE=true: the in-memory database is seeded automatically on boot. Nothing to do.');
+    console.log('DEMO_MODE=true: the server seeds its database automatically on boot. Nothing to do.');
     process.exit(0);
   }
   await connectDB(env);

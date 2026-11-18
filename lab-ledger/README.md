@@ -2,7 +2,9 @@
 
 **Who has the oscilloscope?** Lab Ledger tracks the unique, serial-numbered equipment in university teaching labs — oscilloscopes, microscopes, centrifuges, pipettes: who has each item, where it lives, and when it needs calibrating.
 
-It is the first app raised from the [Crypt Kit skeleton](../skeleton/README.md). The Core (`server/src/core`, `server/src/middleware`, `client/src/components/resource`, `client/src/lib/can.js`) is byte-identical to `/skeleton` — run `node scripts/check-core.js` from the repo root. Everything Lab-specific is added through the skeleton's extension points.
+Live demo: https://leb-ledger.netlify.app (one-click demo buttons on the login page).
+
+It is the first app raised from the [Crypt Kit skeleton](../skeleton/README.md) and has every [shared feature](../README.md#shared-features-every-app-gets-them-from-the-skeleton): sign-up with approval, password reset by email, notifications with email, CSV import/export, saved views and themed PDFs. The Core (`server/src/core`, `server/src/middleware`, `server/test/core`, `server/jest.config.js`, `client/src/components/resource`, `client/src/lib/can.js`) is byte-identical to `/skeleton` — run `node scripts/check-core.js` from the repo root. Everything Lab-specific is added through the skeleton's extension points.
 
 ## The problem
 
@@ -53,8 +55,8 @@ Technician: Record return (Good / Fair / Damaged) ──────────
 - **Approve** runs in one transaction with a conditional `findOneAndUpdate({ status: 'Available' })` on the equipment, so two concurrent approvals for the same item can never both win (HTTP 409 for the loser). A partial unique index is the second guard.
 - Every transition writes an Activity Log entry on **both** the checkout and the equipment.
 - **Calibration**: logging one schedules the next due date; the skeleton sweeper flags items whose date has passed as `CalibrationDue`.
-- **QR labels**: on the Equipment list, staff tick rows → *Print labels* bulk action → A4 PDF, 3 × 8 labels per sheet. Each QR opens `<CLIENT_URL>/scan/<assetTag>`.
-- **Scan**: `/scan` uses the camera (`BarcodeDetector`) when the browser supports it, otherwise a manual tag box. `/scan/LL-0042` shows the item card with status, borrower, due back, next calibration and the actions you are allowed to take. Unknown tags: “No equipment haunts this tag”.
+- **QR labels**: every equipment detail page has a QR card (download PNG, print one label, copy link). On the Equipment list, staff tick rows → *Print labels* bulk action → A4 PDF in the portal's colours, 3 × 8 labels per sheet. Each QR opens `<CLIENT_URL>/scan/<assetTag>`; a signed-out visitor signs in first and then lands on the item.
+- **Scan**: `/scan` reads a label with the camera (`BarcodeDetector`, or `jsQR` in browsers without it), from a photo or screenshot, or from a typed asset tag or pasted label link. `/scan/LL-0042` shows the item card with status, borrower, due back, next calibration and the actions you are allowed to take. Unknown tags: “No equipment haunts this tag”.
 - **Voice** (text or speech): “who has the oscilloscope?”, “is the centrifuge available?”, “what needs calibration this month?”, “which items are overdue?” — names are fuzzy-matched (≤ 2 typos per word).
 - **Dashboard**: an *Out right now* panel lists active loans with overdue ones first and highlighted.
 - **Reports**: one-click *Calibration Audit* preset (equipment with `requiresCalibration`, columns name, asset tag, lab, status, next calibration, overdue by) and *Overdue loans*.
@@ -83,7 +85,7 @@ npm run dev --prefix server               # API on http://localhost:5000
 npm run dev --prefix client               # app on http://localhost:5173
 ```
 
-Demo mode starts an in-memory MongoDB replica set (transactions work) and seeds 3 labs, 40 equipment items, 25 calibrations and checkouts in every status (two of them overdue). Set `CLIENT_URL` to the public client URL before printing labels so the QR codes point at your deployment.
+Demo mode starts an in-memory MongoDB replica set (transactions work) and seeds 3 labs, 40 equipment items, 25 calibrations, 12 checkouts in every status (two of them overdue) and 4 reservations. Set `CLIENT_URL` to the public client URL before printing labels so the QR codes point at your deployment.
 
 ### 60-second demo path
 
@@ -95,12 +97,12 @@ Demo mode starts an in-memory MongoDB replica set (transactions work) and seeds 
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest: skeleton suites ("core" project) + Lab Ledger suites ("app" project)
-npm test --prefix client     # Vitest: skeleton UI tests + Lab Ledger pages, dialogs, panel, contrast
-SMOKE_PORT=5061 npm run smoke --prefix server   # boots demo mode and runs 40 HTTP checks
+npm test --prefix server     # Jest, 232 tests: skeleton suites ("core" project) + Lab Ledger suites ("app" project)
+npm test --prefix client     # Vitest, 109 tests: skeleton UI tests + Lab Ledger pages, dialogs, scan, contrast
+npm run smoke --prefix server   # boots demo mode and runs 40 HTTP checks (SMOKE_PORT to change the port)
 ```
 
-The server runs two Jest projects. **core** runs the skeleton's suites unchanged against the skeleton's reference config (`test/skeleton.crypt.config.js`, with app routes stubbed out exactly as in `/skeleton`). **app** runs Lab Ledger's suites, including the correctness properties from the design:
+The server runs two Jest projects. **core** runs the skeleton's suites unchanged against the skeleton's reference config (`test/core/crypt.config.js`, with app routes stubbed out exactly as in `/skeleton`). **app** runs Lab Ledger's suites, including the correctness properties from the design:
 
 | Property | Suite |
 |---|---|
@@ -113,9 +115,13 @@ The server runs two Jest projects. **core** runs the skeleton's suites unchanged
 
 ## Screenshots
 
-_Captured from a real browser run (Chrome, demo data). Still missing: `lab-labels.png`, the printed QR label sheet._
+_Captured from a real browser run (Chrome, demo data), in [`docs/screenshots/`](../docs/screenshots)._
 
-- `docs/screenshots/lab-dashboard.png` — dashboard with the *Out right now* panel
-- `docs/screenshots/lab-scan-mobile.png` — scan result card at 375 px
-- `docs/screenshots/lab-labels.png` — QR label sheet
-- `docs/screenshots/lab-voice.png` — “who has the oscilloscope?”
+- `lab-dashboard.png` — dashboard with the *Out right now* panel
+- `lab-scan-mobile.png` — scan result card at 375 px
+- `lab-voice.png` — “who has the oscilloscope?”
+- `lab-reservations.png`, `lab-reservation-form.png` — bookings list and the date-time booking form
+- `lab-insights.png` — most and least used equipment, late borrowers
+- `lab-import.png` — CSV import check before anything is written
+- `lab-saved-views.png` — saved filter chips on a list
+- `lab-email-snackbar.png` — notifications panel with *Email me a test*

@@ -2,6 +2,8 @@
 
 Inventory for community food banks, raised from the [Crypt Kit skeleton](../skeleton). Speak a donation in, hand out the food that expires first, and print the month's impact for funders in one click.
 
+Live demo: https://pantry-ghost.netlify.app (one-click demo buttons on the login page). It also has every [shared feature](../README.md#shared-features-every-app-gets-them-from-the-skeleton): sign-up with approval, password reset by email, notifications with email, CSV import/export, saved views and themed PDFs.
+
 ## The problem
 
 - **Food expires on shelves** because nobody can see what to use first.
@@ -58,6 +60,8 @@ Lot status is derived, never typed: `Fresh` → `ExpiringSoon` (within the categ
 7. **Expiry notifications**: the hourly job sends one summary per status per day ("3 lots have expired") to the Coordinator and Volunteers, never the Board.
 
 8. **Insights** (`/insights`, Coordinator and Volunteer): usable stock per category against a minimum (edit the numbers in `server/src/domain/lowStock.js`), and waste by donor, meaning how much of what each donor gave expired or was discarded. A daily job at 08:00 notifies staff about each low category, once a week per category. *Download PDF* stores the report with the others. API: `GET /api/insights`, `POST /api/insights/report`.
+9. **Item IDs and QR labels**: every stock lot gets a short ID (`SL-0001`, set on create and backfilled at boot for older lots). Its detail page has a QR card (download PNG, print one label, copy link). On the Stock list, tick rows → *Print QR labels* for an A4 sheet of 3 × 8 labels.
+10. **Scan or find** (`/scan`, every role): scan a shelf label with the camera, a photo or a screenshot, or type the ID, to open the lot. The QR opens `<CLIENT_URL>/scan/SL-0001`, so any phone camera works; a signed-out visitor signs in first and then lands on the lot.
 
 ## Run it (no database needed)
 
@@ -73,12 +77,12 @@ The first run downloads a MongoDB binary (about 600 MB, cached in `server/node_m
 ## Tests
 
 ```bash
-npm test --prefix server                    # Jest: skeleton suites + Pantry Ghost properties P1–P6, integration
-npm test --prefix client                    # Vitest: lantern contrast, intake drafts, FEFO stepper, voice confirm card
-SMOKE_PORT=5062 npm run smoke --prefix server   # boots demo mode and walks the whole demo path over HTTP
+npm test --prefix server                    # Jest, 243 tests: skeleton suites + Pantry Ghost properties P1–P6, integration
+npm test --prefix client                    # Vitest, 103 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
+npm run smoke --prefix server               # boots demo mode and walks the demo path over HTTP (30 checks)
 ```
 
-The server runs two Jest projects. **skeleton** runs the skeleton's own suites unchanged against the skeleton's role names. **pantry** runs this app's suites against the real `crypt.config.js`.
+The server runs two Jest projects. **core** runs the skeleton's own suites unchanged against the skeleton's reference config (`test/core/crypt.config.js`). **app** runs this app's suites against the real `crypt.config.js`.
 
 | Property | What it guarantees |
 |---|---|
@@ -91,25 +95,28 @@ The server runs two Jest projects. **skeleton** runs the skeleton's own suites u
 
 ## How it extends the skeleton
 
-The core is byte-identical to `/skeleton` (`node scripts/check-core.js`). Everything Pantry Ghost adds goes through extension points:
+The core (`server/src/core`, `server/src/middleware`, `server/test/core`, `server/jest.config.js`, `client/src/components/resource`, `client/src/lib/can.js`) is byte-identical to `/skeleton` (`node scripts/check-core.js`). Everything Pantry Ghost adds goes through extension points:
 
 | Extension point | Used for |
 |---|---|
 | `server/src/resources/*.js` | donors, stock-lots (hooks + `extendSchema` for `receivedQuantity`), households (auto code), distributions (`lines` via `extendSchema`, generic writes denied) |
 | `server/src/domain/` | pure `classifyExpiry`, `parseIntake`, `planFefo`, with number, date and category vocabularies |
-| `server/src/routes/app/` | `/api/intake`, `/api/distributions`, `/api/reports/impact` |
-| `server/src/jobs/app/` | hourly expiry classification |
+| `server/src/routes/app/` | `/api/intake`, `/api/distributions`, `/api/reports/impact`, donor receipts, `/api/insights` |
+| `server/src/jobs/app/` | hourly expiry classification, daily low-stock alerts, item-ID backfill |
 | `server/src/intents/` | INTAKE, EXPIRING_THIS_WEEK, STOCK_OF, HOUSEHOLDS_SERVED (aggregate-only) |
 | `server/src/dashboard/` + `client/src/dashboard/` | Use first, This month |
 | `client/src/voice/` | INTAKE confirm card, expiring list |
-| `client/src/appRoutes.jsx` | Intake, Distribute, Impact report pages, plus report presets |
+| `client/src/appRoutes.jsx` | Intake, Distribute, Scan or find, Insights and Impact report pages, report presets and the *Print QR labels* bulk action |
+| `client/src/qrCodes.js` | which records get QR codes (stock lots, by `code`) |
 | `client/src/theme/tokens.css` + `Logo` | the lantern theme and the ghost-with-a-lantern mascot |
 
 ## Screenshots
 
-_Captured from a real browser run (Chrome, demo data). Also in the folder: `pantry-insights.png`, `pantry-insights-mobile.png` and `pantry-donor-receipt.png`._
+_Captured from a real browser run (Chrome, demo data), in [`docs/screenshots/`](../docs/screenshots)._
 
 - `docs/screenshots/pantry-dashboard.png`: Use first board and This month
 - `docs/screenshots/pantry-intake.png`: voice intake drafts with a missing field highlighted
 - `docs/screenshots/pantry-distribute.png`: FEFO pick list grouped by location
 - `docs/screenshots/pantry-impact.png`: impact report preview and PDF
+- `docs/screenshots/pantry-insights.png`, `pantry-insights-mobile.png`: low stock and waste by donor
+- `docs/screenshots/pantry-donor-receipt.png`: donor receipt preview

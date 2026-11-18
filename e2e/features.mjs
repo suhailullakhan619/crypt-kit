@@ -139,7 +139,7 @@ if (run('skeleton')) {
     const email = `e2e-${Date.now()}@crypt.test`;
     await page.getByRole('dialog').getByLabel(/Name/).fill('E2E Person');
     await page.getByRole('dialog').getByLabel(/Email/).fill(email);
-    await page.getByRole('dialog').getByLabel(/password/i).fill('e2e-password-1');
+    await page.getByRole('dialog').getByLabel('Temporary password').fill('e2e-password-1');
     await page.getByRole('dialog').getByRole('button', { name: /create user/i }).click();
     // Each row also has a phone-only copy of the email that is hidden on desktop, so look for the visible Email cell.
     await page.getByRole('cell', { name: email, exact: true }).waitFor({ timeout: 8000 });
@@ -598,6 +598,117 @@ if (run('sweep')) {
     }
   }
   await step(`[sweep] ${checked} pages: no "[object Object]", "undefined" or "NaN"`, async () => { if (problems.length) throw new Error([...new Set(problems)].slice(0, 6).join(' | ')); });
+}
+
+// ═════════════ QR codes, short IDs, scan or find, label sheets (every app) ═════════════
+// key = the resource with QR labels (client/src/qrCodes.js), code = its ID pattern.
+const QR = {
+  skeleton: { key: 'notes', code: /^N-\d{4}$/, viewer: /^Viewer/i },
+  lab: { key: 'equipment', code: /^LL-\d{4}$/, viewer: /^Student/i, labScan: true },
+  pantry: { key: 'stock-lots', code: /^SL-\d{4}$/, viewer: /^Volunteer/i },
+};
+// The shared page redirects to the record; Lab Ledger's /scan/<tag> shows the equipment in place.
+const SCAN_UI = {
+  shared: { field: 'ID or link', button: 'Find', unknown: /has the ID ZZ-9999/, foreign: /is not for .* It links to another website/ },
+  lab: { field: 'Asset tag or link', button: 'Look up', unknown: /No equipment haunts this tag/, foreign: /No equipment haunts this tag/ },
+};
+async function opened(page, q, item, code, timeout = 15000) {
+  if (!q.labScan) { await page.waitForURL((u) => u.pathname === `/r/${q.key}/${item._id}`, { timeout }); return; }
+  await page.waitForURL((u) => decodeURIComponent(u.pathname) === `/scan/${code}`, { timeout });
+  await page.getByText(item.name, { exact: true }).first().waitFor({ timeout });
+}
+if (run('qr')) {
+  for (const [app, cfg] of activeApps()) {
+    const q = QR[app];
+    const tag = `[qr ${app}]`;
+    const page = await newPage();
+    await signIn(page, cfg.base, cfg.admin);
+    const token = await page.evaluate(() => localStorage.getItem('crypt_token'));
+    const api = async (p) => (await fetch(`${cfg.base}/api${p}`, { headers: { Authorization: `Bearer ${token}` } })).json();
+    const first = (await api(`/r/${q.key}?limit=1`)).items[0];
+    const idField = Object.keys(first).find((k) => typeof first[k] === 'string' && q.code.test(first[k]));
+    const code = first[idField];
+    let png = null;
+
+    await step(`${tag} Every ${q.key} record has a short ID like ${code}`, async () => {
+      const all = await api(`/r/${q.key}?limit=100`);
+      const missing = all.items.filter((i) => !q.code.test(i[idField] ?? ''));
+      if (missing.length) throw new Error(`${missing.length} of ${all.items.length} have no ID`);
+      const ids = new Set(all.items.map((i) => i[idField]));
+      if (ids.size !== all.items.length) throw new Error('IDs are not unique');
+      return `${all.items.length} records`;
+    });
+    await step(`${tag} Detail page shows a QR card with the ID and a working PNG download`, async () => {
+      await page.goto(`${cfg.base}/r/${q.key}/${first._id}`);
+      await page.getByRole('img', { name: /^QR code for / }).waitFor({ timeout: 15000 });
+      await page.getByText(code, { exact: true }).first().waitFor({ timeout: 5000 });
+      const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.getByRole('button', { name: 'Download' }).click()]);
+      png = path.join(tmp, `${app}-qr.png`);
+      await dl.saveAs(png);
+      const head = fs.readFileSync(png).subarray(1, 4).toString();
+      if (head !== 'PNG') throw new Error('download is not a PNG');
+      return dl.suggestedFilename();
+    });
+    await step(`${tag} Print label opens a print page with the QR and ID`, async () => {
+      const [pop] = await Promise.all([page.waitForEvent('popup', { timeout: 10000 }), page.getByRole('button', { name: 'Print label' }).click()]);
+      await pop.waitForLoadState().catch(() => {});
+      const html = await pop.content();
+      await pop.close();
+      if (!html.includes('<svg') || !html.includes(code)) throw new Error('label has no QR or no ID');
+    });
+    const ui = q.labScan ? SCAN_UI.lab : SCAN_UI.shared;
+    await step(`${tag} Scan page: typing ${code.toLowerCase()} opens the item`, async () => {
+      await page.goto(`${cfg.base}/scan`);
+      await page.getByLabel(ui.field).fill(code.toLowerCase());
+      await page.getByRole('button', { name: ui.button }).click();
+      await opened(page, q, first, code);
+    });
+    await step(`${tag} The link inside the QR (/scan/${code}) opens the item`, async () => {
+      await page.goto(`${cfg.base}/scan/${code}`);
+      await opened(page, q, first, code);
+    });
+    await step(`${tag} Scanning a photo of the downloaded QR opens the item`, async () => {
+      if (!png) throw new Error('no PNG from the earlier step');
+      await page.goto(`${cfg.base}/scan`);
+      await page.getByTestId('qr-photo-input').setInputFiles(png);
+      await opened(page, q, first, code, 20000);
+    });
+    await step(`${tag} Unknown ID and a foreign link are reported, not followed`, async () => {
+      await page.goto(`${cfg.base}/scan`);
+      await page.getByLabel(ui.field).fill('ZZ-9999');
+      await page.getByRole('button', { name: ui.button }).click();
+      await expectText(page, ui.unknown);
+      await page.goto(`${cfg.base}/scan`);
+      await page.getByLabel(ui.field).fill('https://evil.example/phish');
+      await page.getByRole('button', { name: ui.button }).click();
+      await expectText(page, ui.foreign);
+      if (!page.url().startsWith(cfg.base)) throw new Error('left the site');
+    });
+    await step(`${tag} Bulk labels: select 3 rows, get one sheet with each ID`, async () => {
+      await page.goto(`${cfg.base}/r/${q.key}`);
+      const boxes = page.locator('main tbody input[type="checkbox"], main tbody [role="checkbox"]');
+      await boxes.first().waitFor({ timeout: 15000 });
+      for (let i = 0; i < 3; i++) await boxes.nth(i).click();
+      if (q.labScan) return downloadPdf(page, () => page.getByRole('button', { name: /^print labels$/i }).click());
+      const [pop] = await Promise.all([page.waitForEvent('popup', { timeout: 10000 }), page.getByRole('button', { name: /print qr labels/i }).click()]);
+      await pop.waitForLoadState().catch(() => {});
+      const html = await pop.content();
+      await pop.close();
+      const svgs = (html.match(/<svg/g) ?? []).length;
+      const codes = new Set(html.match(new RegExp(q.code.source.slice(1, -1), 'g')) ?? []);
+      if (svgs !== 3 || codes.size !== 3) throw new Error(`sheet has ${svgs} QR codes and ${codes.size} IDs`);
+    });
+    await page.context().close();
+
+    const guest = await newPage();
+    await step(`${tag} Signed out, the QR link asks to sign in, then opens the item`, async () => {
+      await guest.goto(`${cfg.base}/scan/${code}`);
+      await guest.waitForURL(/\/login/, { timeout: 15000 });
+      await guest.getByRole('button', { name: q.viewer }).first().click();
+      await opened(guest, q, first, code, 20000);
+    });
+    await guest.context().close();
+  }
 }
 
 // ═════════════ summary ═════════════

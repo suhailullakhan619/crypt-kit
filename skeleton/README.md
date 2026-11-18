@@ -7,6 +7,9 @@ A lean full-stack template for role-secured internal tools. You describe each ki
 - a dashboard with charts, plus an overdue sweeper that flags late records
 - PDF reports
 - a voice agent that answers questions like "which notes are overdue?"
+- accounts (sign-up with approval, password reset by email, change password), notifications with email, CSV import/export, saved views, QR codes with short IDs and a scan page, and OpenAPI docs. See the [feature list](../README.md#shared-features-every-app-gets-them-from-the-skeleton).
+
+Live demo: https://crypt-kit.netlify.app
 
 Lab Ledger and Pantry Ghost in this repo were both raised from this folder.
 
@@ -33,17 +36,29 @@ The login page shows one-click buttons for these accounts in demo mode.
 
 ## Environment (`server/.env`)
 
+The server validates these at start-up and stops with a message naming the variable when something is wrong.
+
 | Variable | Default | Notes |
 |---|---|---|
-| `DEMO_MODE` | `false` | `true` uses an in-memory DB, auto-seeds data and generates a random JWT secret |
+| `DEMO_MODE` | `false` | `true` uses an in-memory DB, auto-seeds data, enables the one-click demo accounts and generates a random JWT secret when none is set |
+| `DEMO_PERSIST` | `false` | With `DEMO_MODE=true`: keep demo data in `MONGODB_URI` instead of in memory (for hosts that cannot run mongod). Requires `MONGODB_DB_NAME` ending in `_demo` or `_test` |
 | `MONGODB_URI` | — | Required unless `DEMO_MODE=true` |
-| `JWT_SECRET` | — | Required unless demo mode; at least 32 characters |
+| `MONGODB_DB_NAME` | — | Use this database instead of the one named in the URI, e.g. `crypt_kit_test` |
+| `SEED_ON_BOOT` | `false` | Seed demo data into a real database at start-up; only when `MONGODB_DB_NAME` ends in `_test` |
+| `JWT_SECRET` | — | Required unless demo mode; at least 32 characters. Set it in demo mode too, or sign-ins end at every restart |
 | `PORT` | `5000` | |
-| `CLIENT_URL` | `http://localhost:5173` | CORS origin |
+| `CLIENT_URL` | `http://localhost:5173` | The client's address: CORS origin, links in emails and the address inside QR codes |
+| `TRUST_PROXY` | `false` | `true` behind one reverse proxy (Render, Railway, Heroku) so rate limits see visitor addresses |
+| `LOGIN_RATE_MAX` | `10` | Sign-in attempts per 15 minutes per IP and email |
+| `AUTH_RATE_MAX` | 5 / 10 | Overrides the per-IP limits on sign-up, forgot-password (5) and reset-password (10) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | — / `587` | Optional email. All four of host, user, password and sender, or none |
+| `MAIL_REPLY_TO` | — | Optional reply address |
+| `MAIL_ALLOW_TEST_DOMAINS` | `false` | Deliver to `.test` / `.example` addresses (only for a local fake mail server) |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | — | Optional owner account (superuser) created by the seed. Both email and password, password at least 8 characters |
 | `OPENAI_API_KEY` | — | Optional; enables Whisper + TTS |
 | `VOICE_PROVIDER` | auto | `openai` when a key is set, otherwise `browser` (Web Speech API) |
 
-App settings live in `server/crypt.config.js`: the app name, the roles (ordered highest first, where the first role is the superuser), demo users, and the report organization and time zone.
+App settings live in `server/crypt.config.js`: the app name, the roles (ordered highest first, where the first role is the superuser), demo users, the report organization, time zone and PDF colours (`reports.theme`), `notifyRoles` (extra roles to notify per resource) and `routineDueRules` (resources whose due rule changes status silently).
 
 ## Add a resource
 
@@ -73,7 +88,7 @@ export default defineResource({
 
 **Field types:** `string`, `text`, `number`, `boolean`, `date`, `enum` (`multiple: true` for tags) and `ref` (`'User'` or another resource key).
 
-**Flags:** `required`, `list`, `filter`, `search`, `hidden`, `secret`, `unique`, `min`, `max`, `default`.
+**Flags:** `required`, `list`, `filter`, `search`, `hidden`, `secret`, `unique`, `min`, `max`, `default`, `label`, `help`, `placeholder`, `formHidden` (shown in lists and details, never in forms, e.g. an ID set by a hook) and, for dates, `time: true` (date-time picker).
 
 ## Go beyond CRUD (extension points)
 
@@ -95,6 +110,7 @@ None of these require editing `core/`.
 | Rich voice answers | `client/src/voice/<INTENT>.jsx` |
 | Custom PDF reports | `reportService.createReport({ title, resource, user, count, render(doc, h) })` |
 | Extra pages / sidebar links | `client/src/appRoutes.jsx` |
+| QR codes, short IDs, scan lookup, label sheets | `client/src/qrCodes.js` → `{ [resourceKey]: { idField, idLabel, example, target(record) } }`; generate the ID in a `beforeCreate` hook with `server/src/utils/itemCode.js` (see `resources/notes.js`) and backfill old records with a boot job like `jobs/app/itemCodes.job.js` |
 | Demo data | `server/src/seed/data/<resource>.js` → `{ resource, records(ctx) }` |
 | Re-skin | `client/src/theme/tokens.css` and the `Logo` in `client/src/components/spooky`. Also copy the light palette into `reports.theme` in `crypt.config.js` so PDFs match; `pdfTheme.test.js` fails if the two drift apart |
 
@@ -109,25 +125,17 @@ npm run summon -- my-app "My App"
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest + fast-check: 21 correctness properties, integration, voice, reports
-                             # (jest.config.js runs the core suites against the frozen config in test/core/)
-npm test --prefix client     # Vitest: permission mirror property, role-based UI, voice states, WCAG contrast
-npm run smoke --prefix server  # boots demo mode and runs HTTP checks
+npm test --prefix server     # Jest + fast-check, 160 tests: correctness properties, integration, accounts,
+                             # email, CSV, notifications, voice, reports (jest.config.js runs the core
+                             # suites against the frozen config in test/core/)
+npm test --prefix client     # Vitest, 92 tests: permission mirror property, role-based UI, accounts, QR and
+                             # scan, dialogs, voice states, WCAG contrast
+npm run smoke --prefix server  # boots demo mode and runs 31 HTTP checks
 ```
 
-## Deploy (Render + MongoDB Atlas)
+## Deploy
 
-1. Create a free Atlas cluster, then copy its connection string into `MONGODB_URI`.
-2. Create a Render **Web Service** for the server:
-   - Root directory: `skeleton/server`
-   - Build command: `npm install`
-   - Start command: `npm start`
-   - Environment: `MONGODB_URI`, a long `JWT_SECRET`, and `CLIENT_URL`
-   - For a public demo without a database, set `DEMO_MODE=true` instead.
-3. Create a Render **Static Site** for the client:
-   - Root directory: `skeleton/client`
-   - Build command: `npm install && npm run build`
-   - Publish directory: `dist`
-   - Environment: `VITE_API_URL=https://<your-api>/api`
-   - Add a rewrite from `/*` to `/index.html`.
-4. Run `npm run seed --prefix server` once against Atlas to create the demo users and data.
+The live demo runs the client on Netlify (`client/netlify.toml`) and the API on Render with MongoDB Atlas. The full steps and variables are in the [root README](../README.md#deploy-netlify--render--mongodb-atlas).
+
+- **Public demo:** `DEMO_MODE=true` with `DEMO_PERSIST=true` and `MONGODB_DB_NAME=crypt_kit_demo` keeps the one-click accounts and stores the data in Atlas; the first start seeds it.
+- **Real use:** leave `DEMO_MODE` off, set `MONGODB_URI`, `JWT_SECRET` and `CLIENT_URL`, then run `npm run seed --prefix server` once to create the demo users and sample records (only collections that are still empty are filled).

@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Real-browser feature tests for the three apps. Needs Chrome and the demo sites running (see README.md).",
   "scripts": {
-    "test": "node features.mjs"
+    "test": "node features.mjs",
+    "live": "node live.mjs"
   },
   "dependencies": {
     "playwright-core": "^1.49.0"
