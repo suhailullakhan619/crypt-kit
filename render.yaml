@@ -1,0 +1,91 @@
+# Render Blueprint: the three API servers (New > Blueprint, pick this repo).
+# Each service builds from its own folder. Values marked `sync: false` are asked for when the
+# Blueprint is created and are never stored in this file.
+#
+# DEMO_MODE + DEMO_PERSIST keep the one-click demo accounts and store the demo data in Atlas.
+# MONGODB_DB_NAME must end in "_demo" or "_test", so the original databases are never opened.
+# MONGOMS_DISABLE_POSTINSTALL skips the in-memory MongoDB download (not used on Render).
+services:
+  - type: web
+    name: crypt-kit-api
+    runtime: node
+    plan: free
+    rootDir: skeleton/server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - { key: NODE_VERSION, value: "20" }
+      - { key: MONGOMS_DISABLE_POSTINSTALL, value: "1" }
+      - { key: DEMO_MODE, value: "true" }
+      - { key: DEMO_PERSIST, value: "true" }
+      - { key: TRUST_PROXY, value: "true" }
+      - { key: MONGODB_DB_NAME, value: crypt_kit_demo }
+      - { key: MONGODB_URI, sync: false }
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: CLIENT_URL, sync: false }
+      - { key: SMTP_HOST, value: smtp-relay.brevo.com }
+      - { key: SMTP_PORT, value: "587" }
+      - { key: SMTP_USER, sync: false }
+      - { key: SMTP_PASS, sync: false }
+      - { key: MAIL_FROM, sync: false }
+      - { key: MAIL_REPLY_TO, sync: false }
+      - { key: SEED_ADMIN_EMAIL, sync: false }
+      - { key: SEED_ADMIN_PASSWORD, sync: false }
+      - { key: SEED_ADMIN_NAME, sync: false }
+
+  - type: web
+    name: lab-ledger-api
+    runtime: node
+    plan: free
+    rootDir: lab-ledger/server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - { key: NODE_VERSION, value: "20" }
+      - { key: MONGOMS_DISABLE_POSTINSTALL, value: "1" }
+      - { key: DEMO_MODE, value: "true" }
+      - { key: DEMO_PERSIST, value: "true" }
+      - { key: TRUST_PROXY, value: "true" }
+      - { key: MONGODB_DB_NAME, value: lab_ledger_demo }
+      - { key: MONGODB_URI, sync: false }
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: CLIENT_URL, sync: false }
+      - { key: SMTP_HOST, value: smtp-relay.brevo.com }
+      - { key: SMTP_PORT, value: "587" }
+      - { key: SMTP_USER, sync: false }
+      - { key: SMTP_PASS, sync: false }
+      - { key: MAIL_FROM, sync: false }
+      - { key: MAIL_REPLY_TO, sync: false }
+      - { key: SEED_ADMIN_EMAIL, sync: false }
+      - { key: SEED_ADMIN_PASSWORD, sync: false }
+      - { key: SEED_ADMIN_NAME, sync: false }
+
+  - type: web
+    name: pantry-ghost-api
+    runtime: node
+    plan: free
+    rootDir: pantry-ghost/server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - { key: NODE_VERSION, value: "20" }
+      - { key: MONGOMS_DISABLE_POSTINSTALL, value: "1" }
+      - { key: DEMO_MODE, value: "true" }
+      - { key: DEMO_PERSIST, value: "true" }
+      - { key: TRUST_PROXY, value: "true" }
+      - { key: MONGODB_DB_NAME, value: pantry_ghost_demo }
+      - { key: MONGODB_URI, sync: false }
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: CLIENT_URL, sync: false }
+      - { key: SMTP_HOST, value: smtp-relay.brevo.com }
+      - { key: SMTP_PORT, value: "587" }
+      - { key: SMTP_USER, sync: false }
+      - { key: SMTP_PASS, sync: false }
+      - { key: MAIL_FROM, sync: false }
+      - { key: MAIL_REPLY_TO, sync: false }
+      - { key: SEED_ADMIN_EMAIL, sync: false }
+      - { key: SEED_ADMIN_PASSWORD, sync: false }
+      - { key: SEED_ADMIN_NAME, sync: false }

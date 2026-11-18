@@ -63,11 +63,50 @@ npm run smoke --prefix lab-ledger/server   # boots demo mode and runs the HTTP c
 
 | | Server | Client | Smoke |
 |---|---|---|---|
-| Skeleton | 76 | 35 | 31 checks |
-| Lab Ledger | 125 | 47 | 40 checks |
-| Pantry Ghost | 142 | 43 | 30 checks |
+| Skeleton | 160 | 92 | 31 checks |
+| Lab Ledger | 232 | 109 | 40 checks |
+| Pantry Ghost | 243 | 103 | 30 checks |
 
 The tests include 33 property-based correctness properties (`fast-check`), each linked to spec requirements. See [docs/KIRO_USAGE.md](docs/KIRO_USAGE.md).
+
+## Shared features (every app gets them from the skeleton)
+
+| Feature | What it does |
+|---|---|
+| **CSV export / import** | Every list has *Export CSV* (follows the active search and filters) and *Import CSV*, which checks the file first and writes nothing until you confirm. API: `GET /api/r/:key/export`, `POST /api/r/:key/import` (`dryRun` defaults to true). |
+| **Notifications** | Bell in the top bar with unread badge. Due rules notify the superuser, the users on the record, and any roles in `notifyRoles` (`crypt.config.js`). Same event never notifies twice. |
+| **Email alerts** | Every notification is also emailed to the user's account address through any SMTP service (tested with Brevo). Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` and optionally `MAIL_REPLY_TO` in `server/.env`; leave them empty to keep alerts in-app only. A half-filled setup stops the server with a clear message. The bell has an *Email me a test* button, and `npm run mail:test -- you@example.com` sends one from the command line. Mail sent "from" a free address such as Gmail often lands in spam: use a sender on your own verified domain for real use. |
+| **Change password** | Key icon in the top bar. `POST /api/auth/change-password`. |
+| **Login rate limit** | 10 attempts per 15 minutes per IP and email (`LOGIN_RATE_MAX`). |
+| **Saved views** | Save the current search and filters on any list as a named chip (kept in this browser). |
+| **Date and time fields** | `{ type: 'date', time: true }` renders a date-time picker. |
+| **OpenAPI docs** | `GET /api/docs` (signed in) returns an OpenAPI 3 document built from the resource definitions. |
+| **Test database safety** | `MONGODB_DB_NAME` picks another database on the same cluster. `SEED_ON_BOOT` only works when that name ends in `_test`, and `DEMO_PERSIST` (demo data in a real cluster) only when it ends in `_demo` or `_test`. |
+
+## Deploy (Netlify + Render + MongoDB Atlas)
+
+Each app is two deploys from this one repo: the client on Netlify and the API on Render. Render is used for the API because the server runs scheduled jobs and must stay running as a normal process.
+
+**1. API on Render.** New > Blueprint, pick this repo. [`render.yaml`](render.yaml) creates `crypt-kit-api`, `lab-ledger-api` and `pantry-ghost-api`, each from its own `<app>/server` folder, with a health check on `/api/health`. Fill in the values it asks for:
+
+| Variable | Value |
+|---|---|
+| `MONGODB_URI` | Your Atlas connection string. In Atlas > Network Access allow `0.0.0.0/0`, since Render's addresses change. |
+| `CLIENT_URL` | The Netlify URL of the same app, e.g. `https://lab-ledger.netlify.app` (no trailing slash). Used for CORS and email links. |
+| `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `MAIL_REPLY_TO` | Optional email (Brevo). Leave all empty for in-app notifications only. |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | Optional owner account. |
+
+The Blueprint sets `DEMO_MODE=true` and `DEMO_PERSIST=true`, so the one-click demo accounts work and the demo data is kept in Atlas databases named `crypt_kit_demo`, `lab_ledger_demo` and `pantry_ghost_demo`. The server refuses to start in this mode unless `MONGODB_DB_NAME` ends in `_demo` or `_test`, so your real databases are never opened. `TRUST_PROXY=true` makes the rate limits count each visitor rather than Render's proxy. Demo accounts cannot change or reset their password. Free Render services sleep after 15 minutes without traffic, so the first request after that takes about a minute.
+
+**2. Client on Netlify.** Add a new site from this repo, once per app:
+
+| Setting | Value |
+|---|---|
+| Base directory | `skeleton/client`, `lab-ledger/client` or `pantry-ghost/client` |
+| Build command / publish directory | read from that folder's `netlify.toml` (`npm run build`, `dist`) |
+| Environment variable `VITE_API_URL` | The Render API URL plus `/api`, e.g. `https://lab-ledger-api.onrender.com/api` |
+
+`VITE_API_URL` is built into the client, so redeploy the site after changing it. Each `netlify.toml` also sends every path to `index.html`, so links like `/scan/LL-0001` and `/reset-password?token=...` open directly.
 
 ## Raise your own app
 
