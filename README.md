@@ -83,20 +83,29 @@ The tests include 33 property-based correctness properties (`fast-check`), each 
 | **OpenAPI docs** | `GET /api/docs` (signed in) returns an OpenAPI 3 document built from the resource definitions. |
 | **Test database safety** | `MONGODB_DB_NAME` picks another database on the same cluster. `SEED_ON_BOOT` only works when that name ends in `_test`, and `DEMO_PERSIST` (demo data in a real cluster) only when it ends in `_demo` or `_test`. |
 
-## Deploy (Netlify + Railway + MongoDB Atlas)
+## Live demo
 
-Each app is two deploys from this one repo: the client on Netlify and the API on Railway. Railway runs the API as a normal long-running process, which the scheduled jobs (overdue sweeper, reminders) need.
+| App | Site | API |
+|---|---|---|
+| Crypt Kit (skeleton) | https://crypt-kit.netlify.app | https://crypt-kit.onrender.com/api/health |
+| Lab Ledger | https://leb-ledger.netlify.app | https://lab-ledger.onrender.com/api/health |
+| Pantry Ghost | https://pantry-ghost.netlify.app | https://pantry-ghost-4e86.onrender.com/api/health |
 
-**1. API on Railway.** Create one project with three services (New > GitHub Repo, pick this repo, then repeat with + New for the other two). In each service's Settings:
+Use the one-click demo buttons on each login page. The APIs run on Render's free plan and sleep after 15 minutes without traffic, so the first request after that can take about a minute.
 
-| Setting | Crypt Kit | Lab Ledger | Pantry Ghost |
-|---|---|---|---|
-| Root Directory | `/skeleton/server` | `/lab-ledger/server` | `/pantry-ghost/server` |
-| Config file path | `/skeleton/server/railway.json` | `/lab-ledger/server/railway.json` | `/pantry-ghost/server/railway.json` |
+## Deploy (Netlify + Render + MongoDB Atlas)
 
-The config file sets the start command (`npm start`), the health check (`/api/health`) and restart on failure. Then open Settings > Networking > **Generate Domain**. Railway sets `PORT` itself.
+Each app is two deploys from this one repo: the client on Netlify and the API on Render. The API runs on Render because the server runs scheduled jobs and must stay running as a normal process.
 
-Variables (Variables tab > Raw Editor), per service:
+**1. API on Render.** New > Web Service, pick this repo, once per app:
+
+| Setting | Value |
+|---|---|
+| Root Directory | `skeleton/server`, `lab-ledger/server` or `pantry-ghost/server` |
+| Runtime / Build / Start | Node / `npm install` / `npm start` |
+| Health Check Path | `/api/health` |
+
+Environment variables, per service:
 
 ```
 DEMO_MODE=true
@@ -120,11 +129,12 @@ SEED_ADMIN_NAME=
 ```
 
 - `DEMO_MODE` + `DEMO_PERSIST` keep the one-click demo accounts and store the demo data in Atlas. The server refuses to start in this mode unless `MONGODB_DB_NAME` ends in `_demo` or `_test`, so your real databases are never opened. Demo accounts cannot change or reset their password.
-- `TRUST_PROXY=true` makes the rate limits count each visitor rather than Railway's proxy.
+- `TRUST_PROXY=true` makes the rate limits count each visitor rather than Render's proxy.
 - `MONGOMS_DISABLE_POSTINSTALL=1` skips downloading the in-memory MongoDB binary, which is not used here.
 - `CLIENT_URL` has no trailing slash. It is used for CORS and email links.
-- In Atlas > Network Access allow `0.0.0.0/0`, since Railway's outgoing addresses change.
+- In Atlas > Network Access allow `0.0.0.0/0`, since Render's outgoing addresses change.
 - Generate `JWT_SECRET` with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
+- After changing variables, redeploy (Manual Deploy > Deploy latest commit). The log should show `MongoDB connected: ... [db: <name>_demo]`.
 
 **2. Client on Netlify.** Add a new site from this repo, once per app:
 
@@ -132,9 +142,9 @@ SEED_ADMIN_NAME=
 |---|---|
 | Base directory | `skeleton/client`, `lab-ledger/client` or `pantry-ghost/client` |
 | Build command / publish directory | read from that folder's `netlify.toml` (`npm run build`, `dist`) |
-| Environment variable `VITE_API_URL` | The Railway domain plus `/api`, e.g. `https://lab-ledger-api-production.up.railway.app/api` |
+| Environment variable `VITE_API_URL` | The Render URL plus `/api`, e.g. `https://lab-ledger.onrender.com/api` |
 
-`VITE_API_URL` is built into the client, so redeploy the site after changing it. Each `netlify.toml` also sends every path to `index.html`, so links like `/scan/LL-0001` and `/reset-password?token=...` open directly.
+`VITE_API_URL` is built into the client, so redeploy the site after changing it (Clear cache and deploy site). Each `netlify.toml` also sends every path to `index.html`, so links like `/scan/LL-0001` and `/reset-password?token=...` open directly.
 
 ## Raise your own app
 

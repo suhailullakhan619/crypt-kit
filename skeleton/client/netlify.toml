@@ -1,6 +1,6 @@
 # Netlify site for this client. In Netlify set "Base directory" to this folder.
 # Required environment variable (Site configuration > Environment variables):
-#   VITE_API_URL = https://<your-railway-domain>.up.railway.app/api
+#   VITE_API_URL = https://<your-render-service>.onrender.com/api
 [build]
   command = "npm run build"
   publish = "dist"
