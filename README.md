@@ -83,20 +83,48 @@ The tests include 33 property-based correctness properties (`fast-check`), each 
 | **OpenAPI docs** | `GET /api/docs` (signed in) returns an OpenAPI 3 document built from the resource definitions. |
 | **Test database safety** | `MONGODB_DB_NAME` picks another database on the same cluster. `SEED_ON_BOOT` only works when that name ends in `_test`, and `DEMO_PERSIST` (demo data in a real cluster) only when it ends in `_demo` or `_test`. |
 
-## Deploy (Netlify + Render + MongoDB Atlas)
+## Deploy (Netlify + Railway + MongoDB Atlas)
 
-Each app is two deploys from this one repo: the client on Netlify and the API on Render. Render is used for the API because the server runs scheduled jobs and must stay running as a normal process.
+Each app is two deploys from this one repo: the client on Netlify and the API on Railway. Railway runs the API as a normal long-running process, which the scheduled jobs (overdue sweeper, reminders) need.
 
-**1. API on Render.** New > Blueprint, pick this repo. [`render.yaml`](render.yaml) creates `crypt-kit-api`, `lab-ledger-api` and `pantry-ghost-api`, each from its own `<app>/server` folder, with a health check on `/api/health`. Fill in the values it asks for:
+**1. API on Railway.** Create one project with three services (New > GitHub Repo, pick this repo, then repeat with + New for the other two). In each service's Settings:
 
-| Variable | Value |
-|---|---|
-| `MONGODB_URI` | Your Atlas connection string. In Atlas > Network Access allow `0.0.0.0/0`, since Render's addresses change. |
-| `CLIENT_URL` | The Netlify URL of the same app, e.g. `https://lab-ledger.netlify.app` (no trailing slash). Used for CORS and email links. |
-| `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `MAIL_REPLY_TO` | Optional email (Brevo). Leave all empty for in-app notifications only. |
-| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | Optional owner account. |
+| Setting | Crypt Kit | Lab Ledger | Pantry Ghost |
+|---|---|---|---|
+| Root Directory | `/skeleton/server` | `/lab-ledger/server` | `/pantry-ghost/server` |
+| Config file path | `/skeleton/server/railway.json` | `/lab-ledger/server/railway.json` | `/pantry-ghost/server/railway.json` |
 
-The Blueprint sets `DEMO_MODE=true` and `DEMO_PERSIST=true`, so the one-click demo accounts work and the demo data is kept in Atlas databases named `crypt_kit_demo`, `lab_ledger_demo` and `pantry_ghost_demo`. The server refuses to start in this mode unless `MONGODB_DB_NAME` ends in `_demo` or `_test`, so your real databases are never opened. `TRUST_PROXY=true` makes the rate limits count each visitor rather than Render's proxy. Demo accounts cannot change or reset their password. Free Render services sleep after 15 minutes without traffic, so the first request after that takes about a minute.
+The config file sets the start command (`npm start`), the health check (`/api/health`) and restart on failure. Then open Settings > Networking > **Generate Domain**. Railway sets `PORT` itself.
+
+Variables (Variables tab > Raw Editor), per service:
+
+```
+DEMO_MODE=true
+DEMO_PERSIST=true
+TRUST_PROXY=true
+MONGOMS_DISABLE_POSTINSTALL=1
+MONGODB_URI=<your Atlas connection string>
+MONGODB_DB_NAME=lab_ledger_demo          # crypt_kit_demo / pantry_ghost_demo for the other two
+JWT_SECRET=<48+ random characters, different per service>
+CLIENT_URL=https://<this app's Netlify site>.netlify.app
+# optional email (Brevo) and owner account
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM=
+MAIL_REPLY_TO=
+SEED_ADMIN_EMAIL=
+SEED_ADMIN_PASSWORD=
+SEED_ADMIN_NAME=
+```
+
+- `DEMO_MODE` + `DEMO_PERSIST` keep the one-click demo accounts and store the demo data in Atlas. The server refuses to start in this mode unless `MONGODB_DB_NAME` ends in `_demo` or `_test`, so your real databases are never opened. Demo accounts cannot change or reset their password.
+- `TRUST_PROXY=true` makes the rate limits count each visitor rather than Railway's proxy.
+- `MONGOMS_DISABLE_POSTINSTALL=1` skips downloading the in-memory MongoDB binary, which is not used here.
+- `CLIENT_URL` has no trailing slash. It is used for CORS and email links.
+- In Atlas > Network Access allow `0.0.0.0/0`, since Railway's outgoing addresses change.
+- Generate `JWT_SECRET` with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
 
 **2. Client on Netlify.** Add a new site from this repo, once per app:
 
@@ -104,7 +132,7 @@ The Blueprint sets `DEMO_MODE=true` and `DEMO_PERSIST=true`, so the one-click de
 |---|---|
 | Base directory | `skeleton/client`, `lab-ledger/client` or `pantry-ghost/client` |
 | Build command / publish directory | read from that folder's `netlify.toml` (`npm run build`, `dist`) |
-| Environment variable `VITE_API_URL` | The Render API URL plus `/api`, e.g. `https://lab-ledger-api.onrender.com/api` |
+| Environment variable `VITE_API_URL` | The Railway domain plus `/api`, e.g. `https://lab-ledger-api-production.up.railway.app/api` |
 
 `VITE_API_URL` is built into the client, so redeploy the site after changing it. Each `netlify.toml` also sends every path to `index.html`, so links like `/scan/LL-0001` and `/reset-password?token=...` open directly.
 
