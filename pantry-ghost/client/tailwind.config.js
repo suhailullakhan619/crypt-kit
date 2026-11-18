@@ -33,12 +33,15 @@ export default {
         pulseGlow: { '0%,100%': { boxShadow: '0 0 0 0 hsl(var(--primary) / 0.55)' }, '50%': { boxShadow: '0 0 0 18px hsl(var(--primary) / 0)' } },
         swirl: { to: { transform: 'rotate(360deg)' } },
         fadeUp: { from: { opacity: 0, transform: 'translateY(6px)' }, to: { opacity: 1, transform: 'none' } },
+        // Dialogs are centred with a translate, so their animation must keep that translate.
+        dialogIn: { from: { opacity: 0, transform: 'translate(-50%, calc(-50% + 8px)) scale(0.98)' }, to: { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' } },
       },
       animation: {
         bob: 'bob 3.2s ease-in-out infinite',
         'pulse-glow': 'pulseGlow 1.6s ease-out infinite',
         swirl: 'swirl 1.4s linear infinite',
         'fade-up': 'fadeUp .25s ease-out both',
+        'dialog-in': 'dialogIn .2s ease-out both',
       },
     },
   },

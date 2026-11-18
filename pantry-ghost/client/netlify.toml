@@ -1,0 +1,15 @@
+# Netlify site for this client. In Netlify set "Base directory" to this folder.
+# Required environment variable (Site configuration > Environment variables):
+#   VITE_API_URL = https://<your-render-service>.onrender.com/api
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Single-page app: every path (e.g. /scan/SL-0001, /reset-password?token=...) loads index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

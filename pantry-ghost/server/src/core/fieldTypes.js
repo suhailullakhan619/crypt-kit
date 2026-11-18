@@ -1,14 +1,14 @@
 /**
  * Field Spec types and the flags each accepts (design § Field Spec Types).
  */
-const COMMON = ['type', 'label', 'help', 'placeholder', 'required', 'list', 'filter', 'hidden', 'secret', 'default'];
+const COMMON = ['type', 'label', 'help', 'placeholder', 'required', 'list', 'filter', 'hidden', 'secret', 'default', 'formHidden'];
 
 export const FIELD_TYPES = Object.freeze({
   string:  [...COMMON, 'min', 'max', 'unique', 'search'],
   text:    [...COMMON, 'max', 'search'],
   number:  [...COMMON, 'min', 'max'],
   boolean: [...COMMON],
-  date:    [...COMMON],
+  date:    [...COMMON, 'time'],
   enum:    [...COMMON, 'values', 'multiple'],
   ref:     [...COMMON, 'ref'],
 });

@@ -14,6 +14,16 @@ const config = {
   reports: {
     organization: 'Crypt Kit Community Food Bank',
     timeZone: 'UTC',
+    // PDF colours: the light palette of client/src/theme/tokens.css (lantern theme), so reports match
+    // the portal. pdfTheme.test.js fails if these drift from tokens.css.
+    theme: {
+      primary: '#b34d09',
+      primaryForeground: '#fdfbf7',
+      ink: '#261c17',
+      muted: '#625650',
+      border: '#ded7ce',
+      zebra: '#eee9e2',
+    },
   },
   demoUsers: [
     { name: 'Rosa Coordinator', email: 'coordinator@pantry.test', password: 'pantry-coordinator-demo', role: 'Coordinator' },

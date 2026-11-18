@@ -54,6 +54,11 @@ Lot status is derived, never typed: `Fresh` → `ExpiringSoon` (within the categ
 4. **Impact report** (`/impact`, Coordinator and Board): pick a month to preview, then generate a PDF with units received and distributed by category, distinct households served, people reached, the waste rate, the top 5 donors and a weekly distributions chart. It is listed with the other reports.
 5. **Dashboard**: a **Use first** board of expiring-soon lots (they glow brighter as expiry nears) and **This month** totals.
 
+6. **Donor receipts** (donor detail page, Coordinator and Volunteer): pick a period, see how many donations and units that donor gave, and download a thank-you PDF listing each donation with the quantity originally received. API: `GET /api/donors/:id/receipt/preview`, `POST /api/donors/:id/receipt`.
+7. **Expiry notifications**: the hourly job sends one summary per status per day ("3 lots have expired") to the Coordinator and Volunteers, never the Board.
+
+8. **Insights** (`/insights`, Coordinator and Volunteer): usable stock per category against a minimum (edit the numbers in `server/src/domain/lowStock.js`), and waste by donor, meaning how much of what each donor gave expired or was discarded. A daily job at 08:00 notifies staff about each low category, once a week per category. *Download PDF* stores the report with the others. API: `GET /api/insights`, `POST /api/insights/report`.
+
 ## Run it (no database needed)
 
 ```bash
@@ -102,7 +107,7 @@ The core is byte-identical to `/skeleton` (`node scripts/check-core.js`). Everyt
 
 ## Screenshots
 
-_Placeholders, to be captured for the submission:_
+_Captured from a real browser run (Chrome, demo data). Also in the folder: `pantry-insights.png`, `pantry-insights-mobile.png` and `pantry-donor-receipt.png`._
 
 - `docs/screenshots/pantry-dashboard.png`: Use first board and This month
 - `docs/screenshots/pantry-intake.png`: voice intake drafts with a missing field highlighted

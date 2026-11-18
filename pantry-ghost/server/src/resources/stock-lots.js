@@ -1,5 +1,6 @@
 import { defineResource } from '../core/defineResource.js';
 import { classifyExpiry } from '../domain/classifyExpiry.js';
+import { nextCode } from '../utils/itemCode.js';
 import { CATEGORIES, UNITS, LOCATIONS, LOT_STATUSES, EXPIRY_WINDOWS, defaultLocation } from '../domain/expiryWindows.js';
 
 const RECLASSIFY_ON = ['quantity', 'expiresOn', 'category'];
@@ -20,6 +21,7 @@ export default defineResource({
   titleField: 'itemName',
   description: 'What is on the shelves, in the fridge and in the freezer — oldest first out.',
   fields: {
+    code:       { type: 'string', label: 'Item ID', unique: true, max: 16, list: true, search: true, formHidden: true, help: 'Generated automatically (SL-0001). Printed under the QR code.' },
     itemName:   { type: 'string', label: 'Item', required: true, max: 80, list: true, search: true },
     category:   { type: 'enum', label: 'Category', values: [...CATEGORIES], required: true, list: true, filter: true },
     quantity:   { type: 'number', label: 'Quantity', required: true, min: 0, list: true },
@@ -43,13 +45,16 @@ export default defineResource({
   },
   softDelete: { field: 'status', value: 'Discarded', at: 'discardedAt' },
   hooks: {
-    beforeCreate: (d, ctx) => ({
+    beforeCreate: async (d, ctx) => ({
       ...d,
+      // The item ID is always generated here (an incoming value, e.g. from a CSV, is replaced).
+      code: await nextCode(ctx.registry.get('stock-lots').model, 'code', 'SL', ctx.session),
       receivedAt: d.receivedAt ?? ctx.now,
       location: d.location ?? defaultLocation(d.category),
       status: classifyExpiry({ ...d, status: undefined }, ctx.now, EXPIRY_WINDOWS),
     }),
-    beforeUpdate: (doc, changes, ctx) => {
+    beforeUpdate: (doc, input, ctx) => {
+      const { code: _permanent, ...changes } = input; // item IDs never change: printed labels must stay valid
       if (!RECLASSIFY_ON.some((f) => f in changes) || changes.status === 'Discarded') return changes;
       const next = { ...doc.toObject(), ...changes };
       return { ...changes, status: classifyExpiry(next, ctx.now, EXPIRY_WINDOWS) };

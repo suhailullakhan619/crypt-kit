@@ -24,6 +24,8 @@ const router = Router();
 router.use('/:key', authenticate, resolveResource);
 
 router.get('/:key', requirePermission('read'), resourceController.list);
+router.get('/:key/export', requirePermission('read'), resourceController.exportCsv);
+router.post('/:key/import', allowGeneric('create'), requirePermission('create'), resourceController.importCsv);
 router.post('/:key', allowGeneric('create'), requirePermission('create'), resourceController.create);
 router.get('/:key/:id', requirePermission('read'), resourceController.get);
 router.patch('/:key/:id', allowGeneric('update'), requirePermission('update'), resourceController.update);

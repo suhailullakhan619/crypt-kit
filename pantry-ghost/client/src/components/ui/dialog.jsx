@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import * as D from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -6,13 +7,27 @@ export const Dialog = D.Root;
 export const DialogTrigger = D.Trigger;
 export const DialogClose = D.Close;
 
-export function DialogContent({ className, children, ...props }) {
+export function DialogContent({ className, children, onOpenAutoFocus, onCloseAutoFocus, ...props }) {
+  // Dialogs here are opened from state (no Radix trigger), so remember what had focus at the moment
+  // the dialog opens and give focus back to it on close. Keyboard users keep their place.
+  const opener = useRef(null);
   return (
     <D.Portal>
       <D.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
       <D.Content
+        onOpenAutoFocus={(e) => {
+          opener.current = document.activeElement;
+          onOpenAutoFocus?.(e);
+        }}
+        onCloseAutoFocus={(e) => {
+          onCloseAutoFocus?.(e);
+          if (!e.defaultPrevented && opener.current?.isConnected && opener.current !== document.body) {
+            e.preventDefault();
+            opener.current.focus();
+          }
+        }}
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 grid max-h-[90dvh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-lg border bg-card p-6 shadow-xl animate-fade-up',
+          'fixed left-1/2 top-1/2 z-50 grid max-h-[90dvh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-lg border bg-card p-6 shadow-xl animate-dialog-in',
           className
         )}
         {...props}

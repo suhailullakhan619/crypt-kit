@@ -36,7 +36,8 @@ async function statsFor(resource, now) {
 
   let overdue = 0;
   let dueSoon = 0;
-  if (def.due) {
+  const routine = getContext().config?.routineDueRules?.includes(def.key);
+  if (def.due && !routine) {
     const { field, status, from, to } = def.due;
     [overdue, dueSoon] = await Promise.all([
       model.countDocuments({ ...base, [status]: to }),
@@ -44,7 +45,7 @@ async function statsFor(resource, now) {
     ]);
   }
 
-  return { key: def.key, label: def.label, icon: def.icon ?? 'database', total, breakdowns, overdue, dueSoon, hasDue: !!def.due };
+  return { key: def.key, label: def.label, icon: def.icon ?? 'database', total, breakdowns, overdue, dueSoon, hasDue: !!def.due && !routine };
 }
 
 /**
