@@ -8,7 +8,7 @@ Two very different apps are raised from the same bones:
 
 | Folder | App | Who it's for | What it shows off |
 |---|---|---|---|
-| [`skeleton/`](skeleton) | **Crypt Kit** | Developers | The template itself: generic resources, RBAC, voice, PDF, cron |
+| [`skeleton/`](skeleton) | **Crypt Kit** | Developers, and anyone who wants a to-do tool | The template itself, with a working to-do suite: Notes, Projects, Reminders, Goals and a Time log, plus RBAC, voice, PDF and cron |
 | [`lab-ledger/`](lab-ledger) | **Lab Ledger** 🧪 | University teaching labs | Unique-item tracking: equipment checkout/return, reservations, calibration schedules, QR asset tags, "who has the oscilloscope?" by voice |
 | [`pantry-ghost/`](pantry-ghost) | **Pantry Ghost** 👻 | Community food banks | Quantity-based stock: donation intake by voice, first-expiry-first-out picking, expiry and low-stock alerts, donor receipts, impact reports |
 
@@ -104,11 +104,11 @@ npm run smoke --prefix lab-ledger/server   # boots demo mode and runs the HTTP c
 
 | | Server | Client | Smoke | Browser (e2e) |
 |---|---|---|---|---|
-| Skeleton | 216 | 163 | 31 checks | 50 steps |
+| Skeleton | 227 | 163 | 31 checks | 61 steps |
 | Lab Ledger | 288 | 180 | 40 checks | 56 steps |
 | Pantry Ghost | 301 | 174 | 30 checks | 47 steps |
 
-The browser suite in [`e2e/`](e2e) drives real Chrome through every feature (sign-in per role, CRUD, accounts, CSV, notifications and email, QR cards, scanning a photo of a QR, label sheets, clickable rows, sorting, board and calendar views, search palette, comments, subtasks, duplicate, dialogs on desktop and mobile, and a sweep for `[object Object]`). `npm run live --prefix e2e` runs a read-only pass over the three live sites (36 steps, every demo role).
+The browser suite in [`e2e/`](e2e) drives real Chrome through every feature (sign-in per role, CRUD, accounts, CSV, notifications and email, QR cards, scanning a photo of a QR, label sheets, clickable rows, sorting, board and calendar views, search palette, comments, subtasks, duplicate, dialogs on desktop and mobile, and a sweep for `[object Object]`). `npm run live --prefix e2e` runs a read-only pass over the three live sites (36 steps, every demo role). `npm run themes --prefix e2e` visits every page of the local portals in dark and light, on desktop and phone, saves a screenshot of each and fails on unreadable text, white form controls or sideways scrolling (412 screens, none flagged).
 
 The tests include 33 property-based correctness properties (`fast-check`), each linked to spec requirements. See [docs/KIRO_USAGE.md](docs/KIRO_USAGE.md).
 

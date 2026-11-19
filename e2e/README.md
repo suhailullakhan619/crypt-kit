@@ -4,7 +4,8 @@ Two scripts drive real Chrome (through `playwright-core`, using the Chrome insta
 
 | Script | Runs against | Changes data? | Steps |
 |---|---|---|---|
-| `features.mjs` | the three apps running locally in demo mode | yes (in-memory demo data) | skeleton 50, lab 56, pantry 47 |
+| `features.mjs` | the three apps running locally in demo mode | yes (in-memory demo data) | skeleton 61, lab 56, pantry 47 |
+| `themes.mjs` | the three apps running locally in demo mode | no | every page, dark and light, desktop and phone (412 screens) |
 | `live.mjs` | the deployed sites | no, it never submits a form | 36 (every demo role of every app) |
 
 ## `features.mjs`: every feature, locally
@@ -25,15 +26,24 @@ Covers sign-in per role, CRUD, sign-up with approval, forgot and reset password,
 2. ```bash
    cd e2e && npm install
    npm test                         # everything
-   node features.mjs lab pantry     # only some sections: skeleton | lab | pantry | qr | ux | dialogs | sweep
+   node features.mjs lab pantry     # only some sections: skeleton | lab | pantry | qr | ux | modules | dialogs | sweep
    ```
 
 Each run changes data (it books slots, imports a lab, saves a donation), so restart the demo apps
 before running again for a clean start.
 
 Environment: `SINK_FILE` (default `c:/Kiro/sites/sink.jsonl`), `E2E_APPS=lab` (limit the cross-app
-sections `qr`, `ux`, `dialogs` and `sweep` to the apps that are running), `CHROME_CHANNEL` (default
+sections `qr`, `ux`, `dialogs` and `sweep` (`modules` always runs against Crypt Kit) to the apps that are running), `CHROME_CHANNEL` (default
 `chrome`), `HEADED=1` to watch the browser.
+
+## `themes.mjs`: dark and light, every page
+
+```bash
+cd e2e && node themes.mjs            # all three apps
+node themes.mjs skeleton lab         # only some
+```
+
+Signs in as each app's admin role and opens every page (lists, detail, new, Board and Calendar views, the search palette, Edit, notifications and sign-out dialogs) in dark and light, at 1440 px and 375 px, and also the signed-out pages. For each screen it saves a screenshot to `c:/Kiro/sites/logs/themes/` (set `THEME_OUT` to change that) and checks the page for text below WCAG AA contrast (4.5:1, or 3:1 for large text), form controls that stayed white in dark mode, a theme that did not switch, and sideways scrolling. It exits with 1 if anything is flagged. Run it after changing colours or shared components.
 
 ## `live.mjs`: read-only check of the deployed sites
 

@@ -877,6 +877,116 @@ if (run('ux')) {
   }
 }
 
+// ═════════════ Crypt Kit example modules: projects, reminders, goals, time log ═════════════
+if (run('modules')) {
+  const { base } = APPS.skeleton;
+  const page = await newPage();
+  await signIn(page, base, APPS.skeleton.admin);
+  const token = await page.evaluate(() => localStorage.getItem('crypt_token'));
+  const api = async (p) => (await fetch(`${base}/api${p}`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  const stamp = Date.now();
+
+  await step('[modules] The sidebar lists Goals, Notes, Projects, Reminders and Time log', async () => {
+    const l = (await links(page)).join('|');
+    for (const need of ['Goals', 'Notes', 'Projects', 'Reminders', 'Time log']) if (!l.includes(need)) throw new Error(`missing ${need}`);
+  });
+  await step('[modules] Every module has demo data and its pages open without error', async () => {
+    const want = { projects: 5, reminders: 5, goals: 3, 'time-entries': 8 };
+    for (const [key, n] of Object.entries(want)) {
+      const total = (await api(`/r/${key}?limit=1`)).total;
+      if (total < n) throw new Error(`${key} has ${total}, expected at least ${n}`);
+      await page.goto(`${base}/r/${key}`);
+      await page.locator('main tbody tr').first().waitFor({ timeout: 15000 });
+      if ((await page.content()).includes('[object Object]')) throw new Error(`[object Object] on ${key}`);
+    }
+  });
+  await step('[modules] Projects: board has a column per status; overdue ones are flagged by the sweeper', async () => {
+    await page.goto(`${base}/r/projects?view=board`);
+    const active = page.locator('[aria-label="Active column"]').first();
+    await active.waitFor({ timeout: 15000 });
+    await active.getByText('Haunt the east wing', { exact: true }).waitFor({ timeout: 8000 });
+    const overdue = page.locator('[aria-label="Overdue column"]').first();
+    await overdue.getByText('Séance season launch', { exact: true }).waitFor({ timeout: 8000 });
+  });
+  await step('[modules] A new note can be put in a project, and the project shows on the note', async () => {
+    await page.goto(`${base}/r/notes/new`);
+    const title = `E2E project note ${stamp}`;
+    await page.getByLabel(/^Title/).fill(title);
+    await page.getByLabel('Project').selectOption({ label: 'Haunt the east wing' });
+    await page.getByRole('button', { name: /^Create/ }).click();
+    await page.waitForURL(/\/r\/notes\/[0-9a-f]{24}$/, { timeout: 15000 });
+    await page.getByText('Haunt the east wing').first().waitFor({ timeout: 8000 });
+    await page.goto(`${base}/r/notes?q=${encodeURIComponent(title)}`);
+    await page.locator('main tbody').getByText('Haunt the east wing').first().waitFor({ timeout: 10000 });
+  });
+  await step('[modules] Goals: ticking a milestone moves the progress, and it survives a reload', async () => {
+    const goal = (await api('/r/goals?limit=20')).items.find((g) => g.title.startsWith('Master the'));
+    const next = goal.milestones.find((m) => !m.done);
+    await page.goto(`${base}/r/goals/${goal._id}`);
+    await page.getByRole('checkbox', { name: next.text, exact: true }).check();
+    await page.waitForTimeout(900);
+    const after = (await api(`/r/goals/${goal._id}`)).item;
+    if (after.progress !== 75) throw new Error(`progress is ${after.progress}, expected 75`);
+    await page.reload();
+    if (!(await page.getByRole('checkbox', { name: next.text, exact: true }).isChecked())) throw new Error('tick lost');
+    await page.getByText('75').first().waitFor({ timeout: 8000 });
+  });
+  await step('[modules] Goals: progress is not an input on the form', async () => {
+    await page.goto(`${base}/r/goals/new`);
+    await page.getByLabel(/^Goal/).waitFor({ timeout: 10000 });
+    if (await page.getByLabel(/Progress/).count()) throw new Error('progress field is editable');
+  });
+  await step('[modules] Reminders: create one with a time; a past reminder shows as Missed', async () => {
+    await page.goto(`${base}/r/reminders/new`);
+    const title = `E2E reminder ${stamp}`;
+    await page.getByLabel(/^Reminder/).fill(title);
+    const d = new Date(Date.now() + 2 * 3600000);
+    await page.getByLabel(/Remind me at/).fill(localInput(d));
+    await page.getByRole('button', { name: /^Create/ }).click();
+    await page.waitForURL(/\/r\/reminders\/[0-9a-f]{24}$/, { timeout: 15000 });
+    await page.getByText('Pending').first().waitFor({ timeout: 8000 });
+    await page.goto(`${base}/r/reminders?status=Missed`);
+    await page.locator('main tbody').getByText('Renew the crypt lease').first().waitFor({ timeout: 10000 });
+  });
+  await step('[modules] Reminders: "Move to" Done works and Missed is not offered by hand', async () => {
+    const rec = (await api(`/r/reminders?q=${encodeURIComponent(`E2E reminder ${stamp}`)}`)).items[0];
+    await page.goto(`${base}/r/reminders/${rec._id}`);
+    if (await page.getByRole('button', { name: /^Missed$/ }).count()) throw new Error('Missed offered as a manual move');
+    await page.getByRole('button', { name: /Done/ }).first().click();
+    await page.getByText('Done').first().waitFor({ timeout: 8000 });
+  });
+  await step('[modules] Time log: add an entry for today; it shows on the calendar view', async () => {
+    await page.goto(`${base}/r/time-entries/new`);
+    const what = `E2E time ${stamp}`;
+    await page.getByLabel(/^What did you work on/).fill(what);
+    await page.getByLabel(/^Minutes/).fill('35');
+    await page.getByRole('button', { name: /^Create/ }).click();
+    await page.waitForURL(/\/r\/time-entries\/[0-9a-f]{24}$/, { timeout: 15000 });
+    const id = page.url().split('/').pop();
+    const e = (await api(`/r/time-entries/${id}`)).item;
+    if (new Date(e.day).toDateString() !== new Date().toDateString()) throw new Error('day did not default to today');
+    await page.goto(`${base}/r/time-entries?view=calendar`);
+    await page.getByRole('grid', { name: /calendar/i }).locator('a[href^="/r/time-entries/"]').first().waitFor({ timeout: 10000 });
+  });
+  await step('[modules] Search (Ctrl+K) finds records in the new modules', async () => {
+    await page.goto(`${base}/`);
+    await page.keyboard.press('Control+k');
+    await page.getByRole('combobox', { name: 'Search records and pages' }).fill('crypt lease');
+    await page.getByRole('option', { name: /Renew the crypt lease/ }).first().waitFor({ timeout: 10000 });
+  });
+  await page.context().close();
+
+  const mobile = await newPage({ width: 375, height: 800 });
+  await signIn(mobile, base, APPS.skeleton.admin);
+  await step('[modules] Mobile: every module list, board and calendar fits the screen', async () => {
+    for (const p of ['/r/projects', '/r/projects?view=board', '/r/reminders', '/r/reminders?view=calendar', '/r/goals', '/r/time-entries', '/r/time-entries?view=calendar']) {
+      await mobile.goto(`${base}${p}`);
+      await noHorizontalScroll(mobile);
+    }
+  });
+  await mobile.context().close();
+}
+
 // ═════════════ summary ═════════════
 await browser.close();
 const bad = results.filter((r) => !r.ok);

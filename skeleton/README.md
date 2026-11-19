@@ -14,6 +14,20 @@ Live demo: https://crypt-kit.netlify.app
 
 Lab Ledger and Pantry Ghost in this repo were both raised from this folder.
 
+## The example modules
+
+Crypt Kit ships a small to-do suite so a fresh install is useful straight away. Each module is one file in `server/src/resources/` and a file of demo data in `server/src/seed/data/`; there is no client code. Delete any you do not need (keep `notes.js` if you keep Reminders or the Time log, because they point at notes).
+
+| Module | What it is for | Good to know |
+|---|---|---|
+| **Notes** | The to-do items: title, status, priority, owner, due date, tags, subtasks and a **Project**. | Short IDs (`N-0001`) and QR codes; overdue notes are flagged by the sweeper. |
+| **Projects** | Groups notes. Status flow Planning, Active, On hold, Completed, Archived, with **Overdue** set automatically once the due date passes. | Milestones checklist; Board view by status; filter notes by project. |
+| **Reminders** | Something to do at a date and time. | When the time passes while still Pending, the sweeper marks it **Missed** and notifies the owner (bell, and email if set up). Snooze by editing the time and moving it back to Pending. |
+| **Goals** | Bigger aims split into milestones. | **Progress is worked out from the ticked milestones** and cannot be typed, so it never drifts. Overdue after the target date. |
+| **Time log** | Minutes spent, optionally against a note. | Day defaults to today and "Logged by" to you; the Calendar view shows the log by day. |
+
+New records default their owner to the person creating them. New apps raised with `npm run summon` get these modules too; Lab Ledger and Pantry Ghost do not use them.
+
 ## Quick start (no database needed)
 
 ```bash
@@ -128,7 +142,7 @@ npm run summon -- my-app "My App"
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest + fast-check, 216 tests: correctness properties, integration, accounts,
+npm test --prefix server     # Jest + fast-check, 227 tests: correctness properties, integration, accounts,
                              # email, CSV, notifications, voice, reports (jest.config.js runs the core
                              # suites against the frozen config in test/core/)
 npm test --prefix client     # Vitest, 163 tests: permission mirror property, role-based UI, accounts, QR and

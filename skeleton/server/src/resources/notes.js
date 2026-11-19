@@ -17,6 +17,7 @@ export default defineResource({
     status:  { type: 'enum', label: 'Status', values: ['Open', 'Done', 'Overdue', 'Archived'], default: 'Open', list: true, filter: true },
     priority:{ type: 'enum', label: 'Priority', values: ['Low', 'Medium', 'High'], default: 'Medium', list: true, filter: true },
     owner:   { type: 'ref', label: 'Owner', ref: 'User', list: true, filter: true },
+    project: { type: 'ref', label: 'Project', ref: 'projects', list: true, filter: true },
     dueDate: { type: 'date', label: 'Due date', list: true },
     pinned:  { type: 'boolean', label: 'Pinned', default: false, filter: true },
     tags:    { type: 'enum', label: 'Tags', multiple: true, values: ['Ritual', 'Potion', 'Haunting', 'Admin'] },

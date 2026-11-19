@@ -11,13 +11,17 @@ import { buildIntents } from '../src/core/intentRegistry.js';
 import { setReportDir } from '../src/services/reportService.js';
 import { sweep } from '../src/services/sweeperService.js';
 import notes from '../src/resources/notes.js';
+import projects from '../src/resources/projects.js';
+import reminders from '../src/resources/reminders.js';
+import goals from '../src/resources/goals.js';
+import timeEntries from '../src/resources/time-entries.js';
 
 let db;
 let app;
 let dir;
 
 beforeAll(async () => {
-  db = await startDb([notes]);
+  db = await startDb([notes, projects, reminders, goals, timeEntries]); // the example modules, as shipped
   db.ctx.intents = await buildIntents(db.registry, { appIntents: [] });
   dir = await mkdtemp(path.join(os.tmpdir(), 'crypt-int-'));
   setReportDir(dir);
