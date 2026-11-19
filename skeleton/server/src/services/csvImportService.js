@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { getContext } from '../context.js';
 import { OBJECT_ID_RE, isResourceRef } from '../core/fieldTypes.js';
+import { normalizeChecklist, parseChecklist } from '../core/checklist.js';
 import { httpError } from '../utils/httpError.js';
 import * as resourceService from './resourceService.js';
 
@@ -119,6 +120,12 @@ async function coerce(name, spec, raw, cache) {
       }
       return { value: spec.multiple ? out : out[0] };
     }
+    case 'checklist':
+      try {
+        return { value: normalizeChecklist(spec, name, parseChecklist(raw)) };
+      } catch (e) {
+        return { error: `${name}: ${e.message}` };
+      }
     case 'ref': {
       const id = await resolveRef(spec, v, cache);
       return id ? { value: id } : { error: `${name}: no ${spec.ref} matches "${v}"` };

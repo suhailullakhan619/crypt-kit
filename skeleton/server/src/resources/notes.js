@@ -20,6 +20,7 @@ export default defineResource({
     dueDate: { type: 'date', label: 'Due date', list: true },
     pinned:  { type: 'boolean', label: 'Pinned', default: false, filter: true },
     tags:    { type: 'enum', label: 'Tags', multiple: true, values: ['Ritual', 'Potion', 'Haunting', 'Admin'] },
+    subtasks:{ type: 'checklist', label: 'Subtasks', list: true },
   },
   permissions: {
     read:   ['Member', 'Viewer'],

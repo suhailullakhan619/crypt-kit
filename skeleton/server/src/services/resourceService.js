@@ -9,6 +9,8 @@ import { escapeRegex } from '../utils/escapeRegex.js';
 import { paginate, envelope } from '../utils/pagination.js';
 import { diff } from '../utils/diff.js';
 import { withTransaction } from '../utils/transaction.js';
+import { normalizeChecklist } from '../core/checklist.js';
+import Comment from '../models/Comment.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const DAY = 24 * 60 * 60 * 1000;
@@ -30,6 +32,7 @@ export function sanitize(def, input) {
     if (!Object.prototype.hasOwnProperty.call(input, name)) continue;
     let v = input[name];
     if (v === undefined) continue;
+    if (spec.type === 'checklist') { out[name] = normalizeChecklist(spec, name, v); continue; }
     if (v === '' && spec.type !== 'string' && spec.type !== 'text') v = null;
     if (spec.type === 'ref' && isObj(v) && v._id !== undefined) v = String(v._id);
     out[name] = v;
@@ -72,8 +75,30 @@ function castFilterValue(name, spec, raw) {
   }
 }
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:?\d{2})?$/;
+
 /**
- * Builds a Mongo filter from query params (Req 5.3, 5.6). Only `filter: true` fields are used;
+ * Parses a `<field>_from` / `<field>_to` value (YYYY-MM-DD or ISO datetime) into a Mongo range
+ * condition. Both ends are inclusive; a date-only `_to` includes the whole day (UTC).
+ * @throws {Error} 400 for anything else
+ */
+function dateBound(param, raw, isTo) {
+  if (typeof raw !== 'string') throw httpError(400, `Filter "${param}" must be a single value`);
+  const v = raw.trim();
+  const dateOnly = DATE_ONLY_RE.test(v);
+  if (!dateOnly && !DATE_TIME_RE.test(v)) throw httpError(400, `Filter "${param}" must be YYYY-MM-DD or an ISO date-time`);
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime()) || (dateOnly && d.toISOString().slice(0, 10) !== v)) {
+    throw httpError(400, `Filter "${param}" is not a valid date`);
+  }
+  if (!isTo) return { $gte: d };
+  return dateOnly ? { $lt: new Date(d.getTime() + DAY) } : { $lte: d };
+}
+
+/**
+ * Builds a Mongo filter from query params (Req 5.3, 5.6). Only `filter: true` fields are used (plus
+ * `<dateField>_from` / `<dateField>_to` ranges on every date field);
  * values are cast by type so operator objects like `{ $gt: '' }` are rejected with 400.
  * @param {{ fields: object, softDelete?: object }} def
  * @param {Record<string, any>} query
@@ -87,6 +112,18 @@ export function buildFilter(def, query = {}, { includeDeleted = false } = {}) {
     if (raw === undefined || raw === '') continue;
     filter[name] = castFilterValue(name, spec, raw);
   }
+
+  // Date ranges: any non-secret date field accepts <field>_from and <field>_to (inclusive).
+  const ranges = [];
+  for (const [name, spec] of Object.entries(def.fields)) {
+    if (spec.type !== 'date' || spec.secret) continue;
+    for (const [suffix, isTo] of [['_from', false], ['_to', true]]) {
+      const raw = query[name + suffix];
+      if (raw === undefined || raw === '') continue;
+      ranges.push({ [name]: dateBound(name + suffix, raw, isTo) });
+    }
+  }
+  if (ranges.length) filter.$and = ranges;
 
   const q = typeof query.q === 'string' ? query.q.trim() : '';
   const searchFields = Object.entries(def.fields).filter(([, s]) => s.search && !s.secret).map(([n]) => n);
@@ -113,6 +150,17 @@ export function buildSort(def, sortParam) {
     throw httpError(400, `Cannot sort by "${field}"`);
   }
   return { [field]: dir, _id: dir };
+}
+
+const TEXT_TYPES = ['string', 'text', 'enum'];
+/**
+ * Collation for the list sort: text fields sort alphabetically and case-insensitively
+ * ("apple" before "Banana"), as people expect from a sortable column. Null for other fields.
+ */
+export function sortCollation(def, sortParam) {
+  const raw = typeof sortParam === 'string' && sortParam ? sortParam : def.defaultSort ?? '-createdAt';
+  const spec = def.fields[raw.replace(/^-/, '')];
+  return spec && TEXT_TYPES.includes(spec.type) ? { locale: 'en', strength: 2, numericOrdering: true } : null;
 }
 
 /** Populate specs for every ref field: `{ path, select }` with the target's title field only. */
@@ -148,6 +196,8 @@ export async function list(resource, query, user) {
   const pg = paginate(query);
 
   let cursor = resource.model.find(filter).sort(sort).skip(pg.skip).limit(pg.limit);
+  const collation = sortCollation(resource.def, query.sort);
+  if (collation) cursor = cursor.collation(collation);
   for (const p of populateSpecs(resource.def, registry)) cursor = cursor.populate(p);
   const [items, total] = await Promise.all([cursor.lean(), resource.model.countDocuments(filter)]);
   return envelope(items, total, pg);
@@ -262,6 +312,7 @@ export async function remove(resource, id, user) {
       await doc.save({ session, validateModifiedOnly: true });
     } else {
       await model.deleteOne({ _id: doc._id }, { session });
+      await Comment.deleteMany({ resource: key, recordId: doc._id }, { session });
     }
 
     if (def.hooks?.afterDelete) await def.hooks.afterDelete(doc, ctx);
