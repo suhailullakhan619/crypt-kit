@@ -41,6 +41,14 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+  /* Coloured text on a tinted background (badges, active menu rows): the theme colour with 38% of the
+     foreground mixed in, so it stays readable in both themes. */
+  .tone-primary { color: color-mix(in srgb, hsl(var(--primary)) 62%, hsl(var(--foreground))); }
+  .tone-success { color: color-mix(in srgb, hsl(var(--success)) 62%, hsl(var(--foreground))); }
+  .tone-warning { color: color-mix(in srgb, hsl(var(--warning)) 62%, hsl(var(--foreground))); }
+  .tone-destructive { color: color-mix(in srgb, hsl(var(--destructive)) 62%, hsl(var(--foreground))); }
+  /* Solid red count bubble: pushed away from its text colour for contrast. */
+  .bg-bell { background-color: color-mix(in srgb, hsl(var(--destructive)) 78%, hsl(var(--foreground))); }
   /* Native controls (checkboxes, date pickers, scrollbars) follow the theme instead of staying white. */
   :root { color-scheme: light; }
   .dark { color-scheme: dark; }

@@ -104,7 +104,7 @@ export default function Login() {
                 {pub.demoUsers.map((d) => (
                   <Button key={d.email} variant="secondary" onClick={() => signInAs(d)} disabled={!!busyDemo} className="h-auto min-h-[3rem] flex-col gap-0 border border-transparent py-2 hover:border-primary/40">
                     <span>{busyDemo === d.email ? 'Summoning…' : d.role}</span>
-                    <span className="max-w-full truncate text-[11px] font-normal opacity-80">{d.name}</span>
+                    <span className="max-w-full truncate text-[11px] font-normal">{d.name}</span>
                   </Button>
                 ))}
               </div>

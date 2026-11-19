@@ -82,7 +82,7 @@ export default function Distribute() {
       <ol className="grid grid-cols-3 gap-2" aria-label="Steps">
         {STEPS.map((s, i) => (
           <li key={s} aria-current={i === step ? 'step' : undefined}
-            className={cn('flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium sm:text-sm', i === step ? 'border-primary bg-primary/10 text-primary' : i < step ? 'text-foreground' : 'text-muted-foreground')}>
+            className={cn('flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium sm:text-sm', i === step ? 'border-primary bg-primary/10 tone-primary' : i < step ? 'text-foreground' : 'text-muted-foreground')}>
             <span className={cn('grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs', i < step && 'border-primary bg-primary text-primary-foreground')}>
               {i < step ? <Check className="h-3.5 w-3.5" aria-hidden /> : i + 1}
             </span>

@@ -164,7 +164,7 @@ export function CommandPalette({ open, onOpenChange }) {
                     aria-selected={on}
                     onMouseMove={() => setActive(i)}
                     onClick={() => go(e)}
-                    className={cn('flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm', on ? 'bg-primary/15 text-primary' : 'hover:bg-muted')}
+                    className={cn('flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm', on ? 'bg-primary/15 tone-primary' : 'hover:bg-muted')}
                   >
                     <span className="shrink-0">{e.icon}</span>
                     <span className="min-w-0 flex-1 truncate">{e.label}</span>

@@ -18,7 +18,7 @@ function Item({ to, icon, children, end, onNavigate }) {
         cn(
           'relative flex min-h-[2.5rem] items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-inset focus-visible:ring-offset-0',
           isActive
-            ? 'bg-primary/15 text-primary before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-primary'
+            ? 'bg-primary/15 tone-primary before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-primary'
             : 'text-sidebar-foreground/80 hover:bg-muted hover:text-sidebar-foreground'
         )
       }
