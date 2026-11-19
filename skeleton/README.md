@@ -7,7 +7,8 @@ A lean full-stack template for role-secured internal tools. You describe each ki
 - a dashboard with charts, plus an overdue sweeper that flags late records
 - PDF reports
 - a voice agent that answers questions like "which notes are overdue?"
-- accounts (sign-up with approval, password reset by email, change password), notifications with email, CSV import/export, saved views, QR codes with short IDs and a scan page, and OpenAPI docs. See the [feature list](../README.md#shared-features-every-app-gets-them-from-the-skeleton).
+- accounts (sign-up with approval, password reset by email, change password), notifications with email, CSV import/export, saved views, QR codes with short IDs and a scan page, and OpenAPI docs
+- clickable rows, sortable columns, Board and Calendar views, subtasks, comments, duplicate, a Ctrl+K search palette and date-range filters. See the [feature list](../README.md#shared-features-every-app-gets-them-from-the-skeleton).
 
 Live demo: https://crypt-kit.netlify.app
 
@@ -86,9 +87,11 @@ export default defineResource({
 });
 ```
 
-**Field types:** `string`, `text`, `number`, `boolean`, `date`, `enum` (`multiple: true` for tags) and `ref` (`'User'` or another resource key).
+**Field types:** `string`, `text`, `number`, `boolean`, `date`, `enum` (`multiple: true` for tags), `ref` (`'User'` or another resource key) and `checklist` (subtasks: items of `{ text, done }`, `max` items, default 50; cannot be filtered, searched or unique).
 
 **Flags:** `required`, `list`, `filter`, `search`, `hidden`, `secret`, `unique`, `min`, `max`, `default`, `label`, `help`, `placeholder`, `formHidden` (shown in lists and details, never in forms, e.g. an ID set by a hook) and, for dates, `time: true` (date-time picker).
+
+**Resource options worth knowing:** `comments: false` turns the comment thread off for a resource (use it where free text must not be stored); a `statusFlow` adds the Board view and a `due` rule or a `date` list column adds the Calendar view, with no client code.
 
 ## Go beyond CRUD (extension points)
 
@@ -125,10 +128,10 @@ npm run summon -- my-app "My App"
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest + fast-check, 160 tests: correctness properties, integration, accounts,
+npm test --prefix server     # Jest + fast-check, 216 tests: correctness properties, integration, accounts,
                              # email, CSV, notifications, voice, reports (jest.config.js runs the core
                              # suites against the frozen config in test/core/)
-npm test --prefix client     # Vitest, 92 tests: permission mirror property, role-based UI, accounts, QR and
+npm test --prefix client     # Vitest, 163 tests: permission mirror property, role-based UI, accounts, QR and
                              # scan, dialogs, voice states, WCAG contrast
 npm run smoke --prefix server  # boots demo mode and runs 31 HTTP checks
 ```

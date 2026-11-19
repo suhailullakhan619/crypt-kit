@@ -129,7 +129,7 @@ if (run('skeleton')) {
   });
   await step('[skeleton] Search finds the note and Export CSV downloads it', async () => {
     await page.goto(`${base}/r/notes`);
-    await page.getByLabel('Search').fill('E2E note');
+    await page.getByLabel('Search', { exact: true }).fill('E2E note');
     await page.getByText(globalThis.noteTitle).first().waitFor({ timeout: 8000 });
     return await downloadCsv(page, () => page.getByRole('button', { name: /export csv/i }).click(), /Title,/);
   });
@@ -320,7 +320,7 @@ if (run('lab')) {
     await page.goto(`${base}/r/equipment`);
     if (await page.getByRole('button', { name: /import csv/i }).count()) throw new Error('Import visible to student');
     await downloadCsv(page, () => page.getByRole('button', { name: /export csv/i }).click(), /Name,Asset tag/);
-    await page.getByLabel('Search').fill('scope');
+    await page.getByLabel('Search', { exact: true }).fill('scope');
     await page.getByRole('button', { name: /save view/i }).click();
     await page.getByLabel('View name').fill('Scopes');
     await page.getByRole('button', { name: 'Save', exact: true }).click();
@@ -708,6 +708,172 @@ if (run('qr')) {
       await opened(guest, q, first, code, 20000);
     });
     await guest.context().close();
+  }
+}
+
+// ═════════════ list UX, board, calendar, search palette, checklist, comments, duplicate ═════════════
+// list = a list page with a sortable column; commentOn = a resource whose records take comments.
+const UX = {
+  skeleton: { list: 'notes', sortBy: 'Title', commentOn: 'notes', search: /^N-\d{4}$/ },
+  lab: { list: 'equipment', sortBy: 'Name', commentOn: 'equipment', search: /^LL-\d{4}$/ },
+  pantry: { list: 'donors', sortBy: 'Name', commentOn: 'donors', search: null },
+};
+if (run('ux')) {
+  for (const [app, cfg] of activeApps()) {
+    const u = UX[app];
+    const tag = `[ux ${app}]`;
+    const page = await newPage();
+    await signIn(page, cfg.base, cfg.admin);
+    const token = await page.evaluate(() => localStorage.getItem('crypt_token'));
+    const api = async (p, init = {}) => (await fetch(`${cfg.base}/api${p}`, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(init.headers ?? {}) } })).json();
+
+    await step(`${tag} Clicking anywhere on a row (not just the arrow) opens the record`, async () => {
+      await page.goto(`${cfg.base}/r/${u.list}`);
+      const row = page.locator('main tbody tr').first();
+      await row.waitFor({ timeout: 15000 });
+      const href = await row.locator('a[href^="/r/"]').first().getAttribute('href');
+      const cells = row.locator('td');
+      await cells.nth((await cells.count()) - 2).click(); // a plain cell near the end, not the title link
+      await page.waitForURL((x) => x.pathname === href, { timeout: 10000 });
+    });
+    await step(`${tag} Column headers sort the list (asc, then desc)`, async () => {
+      await page.goto(`${cfg.base}/r/${u.list}`);
+      const header = page.locator('main thead').getByRole('button', { name: new RegExp(`^${u.sortBy}`) });
+      await header.click();
+      await page.waitForURL(/sort=/, { timeout: 8000 });
+      const th = page.locator('main thead th[aria-sort]').filter({ has: page.getByRole('button', { name: new RegExp(`^${u.sortBy}`) }) });
+      if ((await th.getAttribute('aria-sort')) !== 'ascending') throw new Error('not ascending');
+      await page.waitForLoadState('networkidle').catch(() => {});
+      const names = await page.locator('main tbody tr').evaluateAll((rows) => rows.map((r) => r.querySelector('a[href^="/r/"]')?.textContent.trim().toLowerCase()));
+      const sorted = [...names].sort((a, b) => a.localeCompare(b));
+      if (names.join('|') !== sorted.join('|')) throw new Error(`rows not sorted: ${names.slice(0, 4).join(', ')}`);
+      await header.click();
+      await page.waitForURL(/sort=-/, { timeout: 8000 });
+      if ((await th.getAttribute('aria-sort')) !== 'descending') throw new Error('not descending');
+    });
+    await step(`${tag} Ctrl+K opens search; Enter on a result opens it`, async () => {
+      await page.goto(`${cfg.base}/`);
+      await page.locator('header').first().waitFor();
+      await page.keyboard.press('Control+k');
+      const box = page.getByRole('combobox', { name: 'Search records and pages' });
+      await box.waitFor({ timeout: 8000 });
+      const first = (await api(`/r/${u.list}?limit=1`)).items[0];
+      const term = u.search ? Object.values(first).find((v) => typeof v === 'string' && u.search.test(v)) : first.name;
+      await box.fill(term);
+      await page.getByRole('option', { name: new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }).first().waitFor({ timeout: 10000 });
+      await page.keyboard.press('Enter');
+      await page.waitForURL((x) => x.pathname === `/r/${u.list}/${first._id}`, { timeout: 10000 });
+      await page.goto(`${cfg.base}/`);
+      await page.keyboard.press('Control+k');
+      await box.fill('reports');
+      await page.getByRole('option', { name: /Reports/ }).first().waitFor({ timeout: 8000 });
+      await page.keyboard.press('Enter');
+      await page.waitForURL(/\/reports$/, { timeout: 8000 });
+    });
+    await step(`${tag} Comments: post one, see it, delete it`, async () => {
+      const rec = (await api(`/r/${u.commentOn}?limit=1`)).items[0];
+      await page.goto(`${cfg.base}/r/${u.commentOn}/${rec._id}`);
+      const text = `E2E comment ${Date.now()}`;
+      await page.getByLabel('Add a comment').fill(text);
+      await page.getByRole('button', { name: /^Comment$/ }).click();
+      await page.getByText(text).first().waitFor({ timeout: 10000 });
+      await page.reload();
+      await page.getByText(text).first().waitFor({ timeout: 10000 });
+      await page.getByRole('button', { name: 'Delete comment' }).last().click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+      await page.getByText(text).first().waitFor({ state: 'detached', timeout: 10000 });
+    });
+    if (app === 'pantry') {
+      await step(`${tag} Households take no comments (privacy)`, async () => {
+        const hh = (await api('/r/households?limit=1')).items[0];
+        await page.goto(`${cfg.base}/r/households/${hh._id}`);
+        await page.getByRole('button', { name: /^Edit$/ }).waitFor({ timeout: 15000 });
+        if (await page.getByLabel('Add a comment').count()) throw new Error('comment box shown on a household');
+      });
+    }
+    if (app === 'skeleton') {
+      await step(`${tag} Board view: columns per status, "Move to" changes the status`, async () => {
+        await page.goto(`${cfg.base}/r/notes?view=board`);
+        const open = page.getByRole('region', { name: 'Open column' }).or(page.locator('[aria-label="Open column"]')).first();
+        await open.waitFor({ timeout: 15000 });
+        const moveBtn = open.getByRole('button', { name: /^Move .* to…$/ }).first();
+        const label = (await moveBtn.getAttribute('aria-label')).replace(/^Move | to…$/g, '');
+        await moveBtn.click();
+        await page.getByRole('menuitem', { name: /Done/ }).first().click();
+        const done = page.locator('[aria-label="Done column"]').first();
+        await done.getByText(label, { exact: true }).first().waitFor({ timeout: 10000 });
+        return label;
+      });
+      await step(`${tag} Calendar view shows notes on their due dates`, async () => {
+        await page.goto(`${cfg.base}/r/notes?view=calendar`);
+        const grid = page.getByRole('grid', { name: /calendar/i });
+        await grid.waitFor({ timeout: 15000 });
+        await grid.locator('a[href^="/r/notes/"]').first().waitFor({ timeout: 10000 });
+        await page.getByRole('button', { name: 'Next month' }).click();
+        await page.getByRole('button', { name: 'Today' }).click();
+        return `${await grid.locator('a[href^="/r/notes/"]').count()} notes this month`;
+      });
+      await step(`${tag} "Mine" filters to my own notes`, async () => {
+        await page.goto(`${cfg.base}/r/notes`);
+        const mine = page.getByRole('button', { name: 'Mine' });
+        await mine.click();
+        await page.waitForURL(/owner=/, { timeout: 8000 });
+        if ((await mine.getAttribute('aria-pressed')) !== 'true') throw new Error('Mine not pressed');
+        await mine.click();
+        await page.waitForURL((x) => !x.search.includes('owner='), { timeout: 8000 });
+      });
+      await step(`${tag} Checklist: tick a subtask on the detail page, it stays ticked`, async () => {
+        const all = (await api('/r/notes?limit=100')).items;
+        const note = all.find((n) => (n.subtasks ?? []).some((s) => !s.done));
+        if (!note) throw new Error('no seeded note with an open subtask');
+        const item = note.subtasks.find((s) => !s.done);
+        await page.goto(`${cfg.base}/r/notes/${note._id}`);
+        const box = page.getByRole('checkbox', { name: item.text, exact: true });
+        await box.check();
+        await page.waitForTimeout(800);
+        await page.reload();
+        if (!(await page.getByRole('checkbox', { name: item.text, exact: true }).isChecked())) throw new Error('tick not saved');
+        return item.text;
+      });
+      await step(`${tag} Checklist: add items in the form; list shows progress`, async () => {
+        await page.goto(`${cfg.base}/r/notes/new`);
+        const title = `E2E checklist ${Date.now()}`;
+        await page.getByLabel(/^Title/).fill(title);
+        const add = page.getByLabel('Add Subtasks item');
+        await add.fill('first step'); await add.press('Enter');
+        await add.fill('second step'); await add.press('Enter');
+        await page.getByRole('button', { name: /^Create/ }).click();
+        await page.waitForURL(/\/r\/notes\/[0-9a-f]{24}$/, { timeout: 15000 });
+        await page.getByText('0 of 2 done').first().waitFor({ timeout: 8000 });
+        await page.goto(`${cfg.base}/r/notes?q=${encodeURIComponent(title)}`);
+        await page.locator('main tbody').getByText('0/2').first().waitFor({ timeout: 10000 });
+      });
+      await step(`${tag} Duplicate opens a prefilled form; saving makes a new note with its own ID`, async () => {
+        const src = (await api('/r/notes?limit=1')).items[0];
+        await page.goto(`${cfg.base}/r/notes/${src._id}`);
+        await page.getByRole('button', { name: 'Duplicate' }).click();
+        await page.waitForURL(/\/r\/notes\/new$/, { timeout: 8000 });
+        const v = await page.getByLabel(/^Title/).inputValue();
+        if (v !== `${src.title} (copy)`) throw new Error(`title was "${v}"`);
+        await page.getByRole('button', { name: /^Create/ }).click();
+        await page.waitForURL(/\/r\/notes\/[0-9a-f]{24}$/, { timeout: 15000 });
+        const id = page.url().split('/').pop();
+        const copy = (await api(`/r/notes/${id}`)).item;
+        if (id === src._id || copy.code === src.code || !/^N-\d{4}$/.test(copy.code)) throw new Error(`copy code ${copy.code}`);
+        return copy.code;
+      });
+    }
+    await page.context().close();
+
+    const mobile = await newPage({ width: 375, height: 760 });
+    await signIn(mobile, cfg.base, cfg.admin);
+    await step(`${tag} Mobile: list, board and calendar fit the screen`, async () => {
+      const views = app === 'skeleton' ? ['', '?view=board', '?view=calendar'] : [''];
+      for (const v of views) { await mobile.goto(`${cfg.base}/r/${u.list}${v}`); await noHorizontalScroll(mobile); }
+      await mobile.getByRole('button', { name: 'Search everything' }).click();
+      await mobile.getByRole('combobox', { name: 'Search records and pages' }).waitFor({ timeout: 8000 });
+    });
+    await mobile.context().close();
   }
 }
 
