@@ -12,11 +12,14 @@ export function AuthCard({ subtitle, children, footer }) {
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <div className="w-full max-w-md animate-fade-up">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <Link to="/login" aria-label="Back to sign in"><Logo className="h-14 w-14 animate-bob" /></Link>
+          <div className="relative">
+            <div aria-hidden className="absolute inset-0 -z-10 scale-[2.2] rounded-full bg-primary/15 blur-2xl" />
+            <Link to="/login" aria-label="Back to sign in" className="block rounded-full"><Logo className="h-14 w-14 animate-bob" /></Link>
+          </div>
           <h1 className="text-3xl font-semibold">{pub?.appName ?? ' '}</h1>
           {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
         </div>
-        <Card className="p-6">{children}</Card>
+        <Card className="p-5 shadow-lg sm:p-7">{children}</Card>
         {footer && <p className="mt-4 text-center text-sm text-muted-foreground">{footer}</p>}
       </div>
     </div>

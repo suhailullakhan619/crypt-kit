@@ -2,6 +2,7 @@ import { Controller } from 'react-hook-form';
 import { Input, Textarea, Label } from '../ui/input';
 import { Select, Switch } from '../ui/select';
 import { RefSelect } from './RefSelect';
+import { ChecklistEditor } from './ChecklistField';
 import { humanise, cn } from '../../lib/utils';
 
 /**
@@ -70,6 +71,15 @@ export function FieldInput({ field, control, register, error }) {
         </Select>
       );
       break;
+    case 'checklist':
+      control_ = (
+        <Controller
+          name={field.name}
+          control={control}
+          render={({ field: f }) => <ChecklistEditor field={field} id={id} value={f.value} onChange={f.onChange} />}
+        />
+      );
+      break;
     case 'ref':
       control_ = <RefSelect field={field} {...common} {...register(field.name, rules)} />;
       break;
@@ -78,7 +88,7 @@ export function FieldInput({ field, control, register, error }) {
   }
 
   return (
-    <div className={cn('flex flex-col gap-2', field.type === 'text' && 'sm:col-span-2')}>
+    <div className={cn('flex flex-col gap-2', (field.type === 'text' || field.type === 'checklist') && 'sm:col-span-2')}>
       <Label htmlFor={field.type === 'enum' && field.multiple ? undefined : id} id={`${id}-label`}>
         {field.label}
         {field.required && <span className="text-primary" aria-hidden> *</span>}

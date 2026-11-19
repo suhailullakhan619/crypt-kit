@@ -7,7 +7,7 @@ export const Input = forwardRef(function Input({ className, ...props }, ref) {
     <input
       ref={ref}
       className={cn(
-        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 aria-[invalid=true]:border-destructive',
+        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base transition-colors placeholder:text-muted-foreground hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive sm:text-sm',
         className
       )}
       {...props}
@@ -33,7 +33,7 @@ export const PasswordInput = forwardRef(function PasswordInput({ className, ...p
         aria-controls={props.id}
         title={visible ? 'Hide password' : 'Show password'}
         disabled={props.disabled}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
         <Icon className="h-4 w-4" aria-hidden />
       </button>
@@ -46,7 +46,7 @@ export const Textarea = forwardRef(function Textarea({ className, ...props }, re
     <textarea
       ref={ref}
       className={cn(
-        'flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-destructive',
+        'flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-base transition-colors placeholder:text-muted-foreground hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive sm:text-sm',
         className
       )}
       {...props}
@@ -56,5 +56,5 @@ export const Textarea = forwardRef(function Textarea({ className, ...props }, re
 
 export function Label({ className, ...props }) {
   // eslint-disable-next-line jsx-a11y/label-has-associated-control
-  return <label className={cn('text-sm font-medium leading-none', className)} {...props} />;
+  return <label className={cn('text-sm font-medium leading-none peer-disabled:opacity-60', className)} {...props} />;
 }

@@ -62,12 +62,15 @@ export default function Login() {
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <div className="w-full max-w-md animate-fade-up">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <Logo className="h-14 w-14 animate-bob" />
+          <div className="relative">
+            <div aria-hidden className="absolute inset-0 -z-10 scale-[2.2] rounded-full bg-primary/15 blur-2xl" />
+            <Logo className="h-14 w-14 animate-bob" />
+          </div>
           <h1 className="text-3xl font-semibold">{pub?.appName ?? ' '}</h1>
           <p className="text-sm text-muted-foreground">Sign in to raise your records from the crypt.</p>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-5 shadow-lg sm:p-7">
           <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
@@ -84,7 +87,7 @@ export default function Login() {
                 {...register('password', { required: 'Password is required' })} />
               {errors.password && <p role="alert" className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
-            <Button type="submit" size="lg" disabled={isSubmitting}>{isSubmitting ? 'Opening the crypt…' : 'Sign in'}</Button>
+            <Button type="submit" size="lg" loading={isSubmitting}>{isSubmitting ? 'Opening the crypt…' : 'Sign in'}</Button>
           </form>
           {pub?.signup && (
             <p className="mt-4 text-center text-sm text-muted-foreground">
@@ -93,13 +96,13 @@ export default function Login() {
           )}
 
           {pub?.demo && pub.demoUsers?.length > 0 && (
-            <div className="mt-6 border-t pt-5">
+            <div className="mt-6 rounded-md border border-dashed bg-muted/40 p-4">
               <p className="mb-3 flex items-center gap-2 text-sm font-medium">
                 <Wand2 className="h-4 w-4 text-primary" aria-hidden /> Demo mode — try a role
               </p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {pub.demoUsers.map((d) => (
-                  <Button key={d.email} variant="secondary" onClick={() => signInAs(d)} disabled={!!busyDemo} className="h-auto flex-col gap-0 py-2">
+                  <Button key={d.email} variant="secondary" onClick={() => signInAs(d)} disabled={!!busyDemo} className="h-auto min-h-[3rem] flex-col gap-0 border border-transparent py-2 hover:border-primary/40">
                     <span>{busyDemo === d.email ? 'Summoning…' : d.role}</span>
                     <span className="max-w-full truncate text-[11px] font-normal opacity-80">{d.name}</span>
                   </Button>
