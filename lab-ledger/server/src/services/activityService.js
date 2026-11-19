@@ -11,7 +11,7 @@ function actorFields(actor) {
 
 /**
  * Appends one Activity Log entry.
- * @param {{ actor: Actor, resource: string, recordId: any, action: 'create'|'update'|'delete'|'status', diff?: object }} entry
+ * @param {{ actor: Actor, resource: string, recordId: any, action: 'create'|'update'|'delete'|'status'|'comment', diff?: object }} entry
  * @param {import('mongoose').ClientSession} [session]
  */
 export async function record({ actor, resource, recordId, action, diff = {} }, session) {

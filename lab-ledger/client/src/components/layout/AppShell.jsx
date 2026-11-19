@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { LogOut, Menu } from 'lucide-react';
+import { LogOut, Menu, Search } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -11,8 +11,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Logo } from '../spooky';
 import { NotificationBell } from './NotificationBell';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { CommandPalette, useCommandShortcut } from './CommandPalette';
 
-function Topbar({ onMenu }) {
+function Topbar({ onMenu, onSearch }) {
   const { logout } = useAuth();
   const { appName } = useMeta();
   const navigate = useNavigate();
@@ -36,6 +37,11 @@ function Topbar({ onMenu }) {
         <span className="font-display font-semibold">{appName}</span>
       </div>
       <div className="ml-auto flex items-center gap-1">
+        <Button variant="outline" size="sm" onClick={onSearch} aria-label="Search everything" title="Search everything (Ctrl K)" className="text-muted-foreground">
+          <Search className="h-4 w-4" aria-hidden />
+          <span className="hidden sm:inline">Search…</span>
+          <kbd className="hidden rounded border bg-muted px-1.5 text-[10px] font-medium sm:inline">Ctrl K</kbd>
+        </Button>
         <NotificationBell />
         <ThemeToggle />
         <ChangePasswordDialog />
@@ -62,6 +68,8 @@ function Topbar({ onMenu }) {
 
 function Shell() {
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useCommandShortcut(setSearchOpen);
   return (
     <div className="fog flex min-h-dvh">
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r bg-sidebar md:block">
@@ -73,11 +81,12 @@ function Shell() {
         </SheetContent>
       </Sheet>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenu={() => setOpen(true)} />
+        <Topbar onMenu={() => setOpen(true)} onSearch={() => setSearchOpen(true)} />
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8 md:py-8">
           <Outlet />
         </main>
       </div>
+      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }

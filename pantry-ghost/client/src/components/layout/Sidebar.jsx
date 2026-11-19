@@ -16,8 +16,10 @@ function Item({ to, icon, children, end, onNavigate }) {
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-          isActive ? 'bg-primary/15 text-primary' : 'text-sidebar-foreground/80 hover:bg-muted hover:text-sidebar-foreground'
+          'relative flex min-h-[2.5rem] items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-inset focus-visible:ring-offset-0',
+          isActive
+            ? 'bg-primary/15 text-primary before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-primary'
+            : 'text-sidebar-foreground/80 hover:bg-muted hover:text-sidebar-foreground'
         )
       }
     >
@@ -48,7 +50,7 @@ export function Sidebar({ onNavigate }) {
         <span className="truncate font-display text-lg font-semibold">{meta.appName || ' '}</span>
       </div>
 
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain pr-0.5">
         <Item to="/" end icon={<LayoutDashboard className="h-4 w-4" aria-hidden />} onNavigate={onNavigate}>Dashboard</Item>
 
         <SectionLabel>Records</SectionLabel>
@@ -73,9 +75,14 @@ export function Sidebar({ onNavigate }) {
         {isSuperuser && <Item to="/users" icon={<Users className="h-4 w-4" aria-hidden />} onNavigate={onNavigate}>Users</Item>}
       </nav>
 
-      <div className="mt-2 rounded-md border bg-card/60 px-3 py-2 text-xs">
-        <p className="truncate font-medium">{user?.name}</p>
-        <p className="text-muted-foreground">{user?.role}</p>
+      <div className="mt-2 flex items-center gap-2.5 rounded-md border bg-card/60 px-3 py-2 text-xs">
+        <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-semibold uppercase text-primary">
+          {(user?.name ?? "?").trim().charAt(0) || "?"}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-medium">{user?.name}</p>
+          <p className="truncate text-muted-foreground">{user?.role}</p>
+        </div>
       </div>
     </div>
   );

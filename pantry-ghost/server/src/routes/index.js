@@ -13,6 +13,7 @@ import reportsRouter from './reports.js';
 import voiceRouter from './voice.js';
 import notificationsRouter from './notifications.js';
 import docsRouter from './docs.js';
+import searchRouter from './search.js';
 
 const APP_ROUTES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'app');
 
@@ -34,6 +35,7 @@ export async function buildApiRouter() {
   api.use('/voice', voiceRouter);
   api.use('/notifications', notificationsRouter);
   api.use('/docs', docsRouter);
+  api.use('/search', searchRouter);
 
   for (const { file, value } of await loadModules(APP_ROUTES_DIR)) {
     if (typeof value !== 'function') throw new Error(`routes/app/${file} must default-export an express Router`);

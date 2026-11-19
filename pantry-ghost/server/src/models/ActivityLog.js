@@ -9,7 +9,7 @@ const ActivityLogSchema = new mongoose.Schema({
   actorName: { type: String },
   resource:  { type: String, required: true },
   recordId:  { type: mongoose.Schema.Types.ObjectId, required: true },
-  action:    { type: String, enum: ['create', 'update', 'delete', 'status'], required: true },
+  action:    { type: String, enum: ['create', 'update', 'delete', 'status', 'comment'], required: true },
   diff:      { type: mongoose.Schema.Types.Mixed, default: {} },
   at:        { type: Date, default: Date.now, index: true },
 });

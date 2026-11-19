@@ -11,11 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, Skeleton, Ba
 import { ResourceIcon, EmptyCrypt } from '../components/spooky';
 import { ActivityTimeline } from '../components/resource/ActivityTimeline';
 import { humanise } from '../lib/utils';
+import { statusVariant } from '../components/resource/StatusBadge';
 
 // App panels: client/src/dashboard/<key>.jsx (Req 16.7). Missing → generic table.
 const panelModules = import.meta.glob('../dashboard/*.jsx', { eager: true });
 const panelComponent = (key) => panelModules[`../dashboard/${key}.jsx`]?.default ?? null;
 
+// Same colours as the status badges, so "Overdue" is red in the chart too.
+const STATUS_FILL = { destructive: 'hsl(var(--destructive))', warning: 'hsl(var(--warning))', success: 'hsl(var(--success))', muted: 'hsl(var(--muted-foreground))', accent: 'hsl(var(--primary))' };
 const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 function GenericPanel({ data }) {
@@ -32,10 +35,11 @@ function GenericPanel({ data }) {
 
 function StatCard({ r }) {
   return (
-    <Link to={`/r/${r.key}`} className="group">
-      <Card className="h-full p-5 transition-colors group-hover:border-primary/60">
-        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-2"><ResourceIcon name={r.icon} /> {r.label}</span>
+    <Link to={`/r/${r.key}`} className="group block rounded-lg">
+      <Card interactive className="h-full p-4 sm:p-5">
+        <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
+          <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary"><ResourceIcon name={r.icon} /></span>
+          <span className="truncate">{r.label}</span>
         </div>
         <p className="mt-3 font-display text-4xl font-semibold tabular-nums">{r.total}</p>
         {r.hasDue && (
@@ -52,7 +56,9 @@ function StatCard({ r }) {
 function BreakdownChart({ r }) {
   const b = r.breakdowns[0];
   if (!b) return null;
-  const data = Object.entries(b.counts).map(([name, value]) => ({ name: humanise(name), value }));
+  const def = useMeta().resource(r.key);
+  const isStatus = !!def && [def.statusFlow?.field, def.due?.status].includes(b.field);
+  const data = Object.entries(b.counts).map(([raw, value]) => ({ name: humanise(raw), value, raw }));
   const total = data.reduce((a, d) => a + d.value, 0);
   return (
     <Card>
@@ -66,9 +72,9 @@ function BreakdownChart({ r }) {
             <BarChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
               <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={11} stroke="hsl(var(--muted-foreground))" interval={0} />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={11} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--card-foreground))' }} />
+              <Tooltip cursor={{ fill: 'hsl(var(--muted) / 0.6)' }} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--card-foreground))', fontSize: 12 }} itemStyle={{ color: 'hsl(var(--card-foreground))' }} labelStyle={{ color: 'hsl(var(--muted-foreground))' }} />
               <Bar dataKey="value" name="Records" radius={[6, 6, 0, 0]}>
-                {data.map((d, i) => <Cell key={d.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                {data.map((d, i) => <Cell key={d.name} fill={isStatus ? STATUS_FILL[statusVariant(d.raw, def)] : CHART_COLORS[i % CHART_COLORS.length]} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -96,7 +102,7 @@ export default function Dashboard() {
 
       <section aria-label="Totals" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {isLoading
-          ? [0, 1, 2].map((i) => <Card key={i} className="p-5"><Skeleton className="h-4 w-24" /><Skeleton className="mt-4 h-9 w-16" /><Skeleton className="mt-4 h-5 w-40" /></Card>)
+          ? [0, 1, 2, 3].map((i) => <Card key={i} className="p-4 sm:p-5"><div className="flex items-center gap-3"><Skeleton className="h-9 w-9" /><Skeleton className="h-4 w-24" /></div><Skeleton className="mt-4 h-10 w-16" /><Skeleton className="mt-3 h-5 w-40" /></Card>)
           : data?.resources.map((r) => <StatCard key={r.key} r={r} />)}
       </section>
 
@@ -116,7 +122,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {isLoading ? <Card className="p-5"><Skeleton className="h-52 w-full" /></Card> : data?.resources.map((r) => <BreakdownChart key={r.key} r={r} />)}
+          {isLoading ? <Card><CardHeader><Skeleton className="h-5 w-48" /><Skeleton className="mt-1 h-4 w-20" /></CardHeader><CardContent><Skeleton className="h-52 w-full" /></CardContent></Card> : data?.resources.map((r) => <BreakdownChart key={r.key} r={r} />)}
         </div>
         <div className="flex flex-col gap-4">
           <Card>
@@ -126,11 +132,11 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {isLoading ? <Skeleton className="h-16 w-full" /> : attention.length === 0 ? (
-                <p className="text-sm text-muted-foreground">All quiet in the graveyard. 🌙</p>
+                <p className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">All quiet in the graveyard. 🌙</p>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {attention.map((r) => (
-                    <li key={r.key} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
+                    <li key={r.key} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 transition-colors hover:bg-muted/50">
                       <Link to={`/r/${r.key}`} className="flex min-w-[6rem] flex-1 items-center gap-2 text-sm font-medium hover:text-primary">
                         <ResourceIcon name={r.icon} /> <span className="truncate">{r.label}</span>
                       </Link>

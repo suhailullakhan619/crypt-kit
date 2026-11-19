@@ -1,9 +1,9 @@
-import { Plus, Pencil, Trash2, ArrowRightLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowRightLeft, MessageSquare } from 'lucide-react';
 import { formatDateTime, timeAgo } from '../../lib/format';
 import { humanise } from '../../lib/utils';
 
-const ICONS = { create: Plus, update: Pencil, delete: Trash2, status: ArrowRightLeft };
-const VERB = { create: 'created this', update: 'updated', delete: 'archived this', status: 'changed status' };
+const ICONS = { create: Plus, update: Pencil, delete: Trash2, status: ArrowRightLeft, comment: MessageSquare };
+const VERB = { create: 'created this', update: 'updated', delete: 'archived this', status: 'changed status', comment: 'commented' };
 
 function describe(entry) {
   const diff = entry.diff ?? {};
@@ -15,7 +15,7 @@ function describe(entry) {
     const keys = Object.keys(diff);
     return keys.length ? <>updated {keys.map(humanise).join(', ')}</> : 'saved without changes';
   }
-  return VERB[entry.action];
+  return VERB[entry.action] ?? humanise(entry.action);
 }
 
 /**

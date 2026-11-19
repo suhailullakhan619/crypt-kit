@@ -22,6 +22,8 @@ export default defineResource({
   icon: 'house',
   titleField: 'code',
   description: 'Who we serve — a code, a size and dietary needs. No names, no addresses.',
+  // Free-text comments could hold names or addresses, which households must never store (P6).
+  comments: false,
   fields: {
     code:    { type: 'string', label: 'Code', unique: true, max: 12, list: true, search: true, help: 'Generated automatically (H-0001).' },
     size:    { type: 'number', label: 'People', required: true, min: 1, max: 20, list: true },

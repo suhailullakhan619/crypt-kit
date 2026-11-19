@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, Trash2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, ArrowRight, Copy } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { useMeta } from '../context/MetaContext';
 import { usePermission } from '../hooks/usePermission';
@@ -11,7 +11,9 @@ import { PageHeader } from '../components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '../components/ui/display';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { ResourceForm } from '../components/resource/ResourceForm';
+import { ResourceForm, duplicateValues } from '../components/resource/ResourceForm';
+import { CommentsCard } from '../components/resource/CommentsCard';
+import { ChecklistChecks } from '../components/resource/ChecklistField';
 import { StatusBadge } from '../components/resource/StatusBadge';
 import { ActivityTimeline } from '../components/resource/ActivityTimeline';
 import { EmptyCrypt } from '../components/spooky';
@@ -53,6 +55,19 @@ export default function ResourceDetail() {
     onError: (err) => toast.error(errorMessage(err)),
   });
 
+  // Ticking a checklist item PATCHes the whole array; the cache is updated first and rolled back on error.
+  const checklist = useMutation({
+    mutationFn: ({ name, value }) => updateRecord(api, key, id, { [name]: value }),
+    onMutate: async ({ name, value }) => {
+      await qc.cancelQueries({ queryKey: ['r', key, id] });
+      const previous = qc.getQueryData(['r', key, id]);
+      qc.setQueryData(['r', key, id], (old) => (old ? { ...old, [name]: value } : old));
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => { if (ctx?.previous) qc.setQueryData(['r', key, id], ctx.previous); toast.error(errorMessage(err)); },
+    onSettled: () => refresh(),
+  });
+
   const remove = useMutation({
     mutationFn: () => deleteRecord(api, key, id),
     onSuccess: () => { refresh(); toast.success(resource.softDelete ? 'Laid to rest (archived)' : 'Deleted'); navigate(`/r/${key}`); },
@@ -77,6 +92,7 @@ export default function ResourceDetail() {
   const nextStates = resource.statusFlow?.transitions?.[current] ?? [];
   const canUpdate = can(key, 'update');
   const canDelete = can(key, 'delete') && !isDeleted;
+  const canCreate = can(key, 'create');
 
   const save = async (body) => {
     try {
@@ -101,6 +117,7 @@ export default function ResourceDetail() {
         actions={
           <>
             {canUpdate && !isDeleted && <Button variant="outline" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" aria-hidden /> Edit</Button>}
+            {canCreate && <Button variant="outline" onClick={() => navigate(`/r/${key}/new`, { state: { prefill: duplicateValues(resource, item) } })}><Copy className="h-4 w-4" aria-hidden /> Duplicate</Button>}
             {canDelete && <Button variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" aria-hidden /> {resource.softDelete ? 'Archive' : 'Delete'}</Button>}
           </>
         }
@@ -124,16 +141,19 @@ export default function ResourceDetail() {
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
               {resource.fields.map((f) => (
-                <div key={f.name} className={f.type === 'text' ? 'sm:col-span-2' : ''}>
+                <div key={f.name} className={f.type === 'text' || f.type === 'checklist' ? 'sm:col-span-2' : ''}>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{f.label}</dt>
                   <dd className="mt-1 whitespace-pre-wrap break-words text-sm">
-                    {f.name === statusField ? <StatusBadge value={item[f.name]} resource={resource} /> : displayValue(f, item[f.name])}
+                    {f.name === statusField ? <StatusBadge value={item[f.name]} resource={resource} /> : f.type === 'checklist' ? (
+                      <ChecklistChecks label={f.label} value={item[f.name]} onChange={canUpdate && !isDeleted ? (value) => checklist.mutate({ name: f.name, value }) : undefined} />
+                    ) : displayValue(f, item[f.name])}
                   </dd>
                 </div>
               ))}
             </dl>
           </CardContent>
         </Card>
+        {resource.comments !== false && <CommentsCard resourceKey={key} recordId={id} />}
         {DetailPanel && <DetailPanel record={item} resource={resource} />}
         </div>
         <div className="flex flex-col gap-4">

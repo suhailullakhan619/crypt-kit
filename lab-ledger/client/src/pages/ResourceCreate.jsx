@@ -1,4 +1,4 @@
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useApi } from '../hooks/useApi';
@@ -20,6 +20,7 @@ export default function ResourceCreate() {
   const { can } = usePermission();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const resource = meta.resource(key);
 
   if (meta.loading) return <Skeleton className="h-64 w-full" />;
@@ -43,7 +44,7 @@ export default function ResourceCreate() {
     <div className="mx-auto max-w-3xl">
       <PageHeader icon={<ResourceIcon name={resource.icon} className="h-6 w-6 text-primary" />} title={`New ${resource.label.replace(/s$/, '').toLowerCase()}`} />
       <Card className="p-5 md:p-6">
-        <ResourceForm resource={resource} onSubmit={onSubmit} submitLabel="Create" onCancel={() => navigate(-1)} />
+        <ResourceForm resource={resource} prefill={location.state?.prefill} onSubmit={onSubmit} submitLabel="Create" onCancel={() => navigate(-1)} />
       </Card>
     </div>
   );

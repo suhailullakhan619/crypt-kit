@@ -9,7 +9,7 @@ export const Select = forwardRef(function Select({ className, children, ...props
       <select
         ref={ref}
         className={cn(
-          'flex h-10 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 aria-[invalid=true]:border-destructive',
+          'flex h-10 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-base transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive sm:text-sm',
           className
         )}
         {...props}
@@ -30,7 +30,7 @@ export function Switch({ checked, onCheckedChange, id, className, ...props }) {
       aria-checked={!!checked}
       onClick={() => onCheckedChange?.(!checked)}
       className={cn(
-        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent transition-colors',
+        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50',
         checked ? 'bg-primary' : 'bg-input',
         className
       )}

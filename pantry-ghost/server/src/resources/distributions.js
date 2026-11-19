@@ -26,6 +26,8 @@ const LineSchema = new mongoose.Schema(
 export default defineResource({
   key: 'distributions',
   label: 'Distributions',
+  // Distributions point at households; keep free text (possible personal data) off them too (P6).
+  comments: false,
   icon: 'hand-heart',
   titleField: 'summary',
   description: 'Boxes packed for households. Recorded by the Distribute workflow.',

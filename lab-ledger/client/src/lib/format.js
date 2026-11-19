@@ -32,6 +32,7 @@ export function displayValue(field, value) {
     case 'date': return field.time ? formatDateTime(value) : formatDate(value);
     case 'boolean': return value ? 'Yes' : 'No';
     case 'enum': return Array.isArray(value) ? (value.length ? value.map(humanise).join(', ') : '—') : humanise(value);
+    case 'checklist': return Array.isArray(value) && value.length ? `${value.filter((i) => i?.done).length}/${value.length}` : '—';
     case 'ref': return typeof value === 'object' ? value.name ?? value.title ?? value.code ?? '—' : String(value);
     default: return String(value);
   }
@@ -47,6 +48,7 @@ export function toLocalInput(v) {
 
 /** Value suitable for an <input> of the field's type. */
 export function inputValue(field, value) {
+  if (field.type === 'checklist') return Array.isArray(value) ? value.map((i) => ({ text: String(i?.text ?? ''), done: !!i?.done })) : [];
   if (value === null || value === undefined) return field.type === 'boolean' ? false : field.type === 'enum' && field.multiple ? [] : '';
   if (field.type === 'date' && field.time) return toLocalInput(value);
   if (field.type === 'date') return String(value).slice(0, 10);

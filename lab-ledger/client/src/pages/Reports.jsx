@@ -79,7 +79,7 @@ export default function Reports() {
               <Input id="report-title" value={title} maxLength={120} placeholder={resource ? `${resource.label} report` : ''} onChange={(e) => setTitle(e.target.value)} />
             </div>
             {resource && <ResourceFilters resource={resource} values={filters} onChange={setFilters} idPrefix="report-filter" />}
-            <Button type="submit" disabled={!key || generate.isPending}>{generate.isPending ? 'Conjuring PDF…' : 'Generate PDF'}</Button>
+            <Button type="submit" disabled={!key} loading={generate.isPending}>{generate.isPending ? 'Conjuring PDF…' : 'Generate PDF'}</Button>
           </form>
         </CardContent>
       </Card>

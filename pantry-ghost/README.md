@@ -21,6 +21,7 @@ Live demo: https://pantry-ghost.netlify.app (one-click demo buttons on the login
 ## Privacy stance
 
 - A household is **a code (`H-0042`), a size and dietary flags**. There is no field for a name, address, phone or email, and the API strips any field that is not declared, so such data cannot be stored even by mistake (property test P6).
+- **Households and distributions take no comments** (`comments: false`), so free text cannot smuggle names or addresses in beside the record (a test checks this).
 - **Board never sees a household code**: not in `/api/meta`, record lists, the dashboard, voice answers or the impact PDF (P6 checks all five).
 - "How many households did we serve?" is an **aggregate-only** voice intent: Board may ask it, and it returns counts only.
 - Donor contacts are for organisations; recipients are never contacted through the app.
@@ -77,8 +78,8 @@ The first run downloads a MongoDB binary (about 600 MB, cached in `server/node_m
 ## Tests
 
 ```bash
-npm test --prefix server                    # Jest, 243 tests: skeleton suites + Pantry Ghost properties P1–P6, integration
-npm test --prefix client                    # Vitest, 103 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
+npm test --prefix server                    # Jest, 301 tests: skeleton suites + Pantry Ghost properties P1–P6, integration
+npm test --prefix client                    # Vitest, 174 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
 npm run smoke --prefix server               # boots demo mode and walks the demo path over HTTP (30 checks)
 ```
 

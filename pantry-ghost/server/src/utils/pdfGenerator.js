@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { checklistSummary } from '../core/checklist.js';
 import { resolvePdfTheme } from './pdfTheme.js';
 
 // ── Look & feel: clean corporate grid (A4 landscape) ─────────────────────────
@@ -44,6 +45,7 @@ const isMidnightUtc = (d) => d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
 /** Formats one cell value for print. */
 export function formatCell(value, type, { timeZone = 'UTC' } = {}) {
   if (value === null || value === undefined || value === '') return '—';
+  if (type === 'checklist') return checklistSummary(value);
   if (Array.isArray(value)) return value.length ? value.map((v) => formatCell(v, type, { timeZone })).join(', ') : '—';
   if (type === 'duration') return formatDuration(value);
   if (type === 'date' || type === 'datetime' || value instanceof Date) {

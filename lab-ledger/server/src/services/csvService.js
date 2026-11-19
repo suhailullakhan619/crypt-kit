@@ -1,5 +1,6 @@
 import { getContext } from '../context.js';
 import { isSuperuser } from '../core/permissions.js';
+import { formatChecklist } from '../core/checklist.js';
 import { buildFilter, buildSort, populateSpecs } from './resourceService.js';
 
 export const EXPORT_LIMIT = 10000;
@@ -39,6 +40,6 @@ export async function exportCsv(resource, query, user) {
   const items = await cursor.lean();
 
   const header = [...columns.map(([n, s]) => s.label ?? n), 'Created'].map(csvCell).join(',');
-  const lines = items.map((it) => [...columns.map(([n]) => plain(it[n])), it.createdAt].map(csvCell).join(','));
+  const lines = items.map((it) => [...columns.map(([n, s]) => (s.type === 'checklist' ? formatChecklist(it[n]) : plain(it[n]))), it.createdAt].map(csvCell).join(','));
   return { csv: `\uFEFF${[header, ...lines].join('\r\n')}\r\n`, rows: items.length };
 }

@@ -11,6 +11,8 @@ export const FIELD_TYPES = Object.freeze({
   date:    [...COMMON, 'time'],
   enum:    [...COMMON, 'values', 'multiple'],
   ref:     [...COMMON, 'ref'],
+  // A list of { text, done } items. Not filterable, searchable or unique.
+  checklist: COMMON.filter((f) => !['filter'].includes(f)).concat('max'),
 });
 
 /** Field names that the skeleton manages itself and apps may not declare. */

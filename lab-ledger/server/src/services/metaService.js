@@ -1,4 +1,5 @@
 import { can } from '../core/permissions.js';
+import { checklistMax } from '../core/checklist.js';
 import { nextStatuses } from '../core/statusFlow.js';
 
 const humanise = (name) =>
@@ -9,6 +10,7 @@ const humanise = (name) =>
  */
 function publicField(name, spec) {
   const out = { name, type: spec.type, label: spec.label ?? humanise(name) };
+  if (spec.type === 'checklist') out.max = checklistMax(spec);
   for (const k of ['required', 'list', 'filter', 'search', 'min', 'max', 'values', 'multiple', 'ref', 'default', 'help', 'placeholder', 'unique', 'time', 'formHidden']) {
     if (spec[k] !== undefined) out[k] = spec[k];
   }
@@ -46,6 +48,7 @@ export function publicResource(resource, role, roles) {
       delete: can(role, def, 'delete', roles) && !disabled.includes('delete'),
     },
     genericDisabled: disabled,
+    comments: def.comments !== false,
     rolePermissions: def.permissions,
     statusFlow: flow,
     due: def.due ?? null,

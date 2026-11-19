@@ -1,13 +1,14 @@
 import mongoose from 'mongoose';
 import config from '../../crypt.config.js';
 import { ACTIONS } from './permissions.js';
+import { CHECKLIST_HARD_MAX } from './checklist.js';
 import {
   FIELD_TYPES, RESERVED_FIELDS, KEY_RE, FIELD_NAME_RE, pascalCase, refModelName,
 } from './fieldTypes.js';
 
 const TOP_LEVEL = [
   'key', 'label', 'icon', 'titleField', 'fields', 'permissions', 'softDelete', 'statusFlow',
-  'due', 'report', 'voice', 'defaultSort', 'hooks', 'extendSchema', 'description', 'genericDisabled',
+  'due', 'report', 'voice', 'defaultSort', 'hooks', 'extendSchema', 'description', 'genericDisabled', 'comments',
 ];
 const HOOKS = ['beforeCreate', 'afterCreate', 'beforeUpdate', 'afterUpdate', 'beforeDelete', 'afterDelete'];
 const GENERIC_ACTIONS = ['create', 'update', 'delete'];
@@ -60,6 +61,9 @@ export function validateDefinition(def, roles = config.roles) {
       if (spec.type === 'ref' && (typeof spec.ref !== 'string' || !spec.ref)) err(`ref field "${fname}" needs a "ref" target`);
       for (const n of ['min', 'max']) {
         if (spec[n] !== undefined && typeof spec[n] !== 'number') err(`field "${fname}" ${n} must be a number`);
+      }
+      if (spec.type === 'checklist' && spec.max !== undefined && (!Number.isInteger(spec.max) || spec.max < 1 || spec.max > CHECKLIST_HARD_MAX)) {
+        err(`checklist field "${fname}" max must be a whole number from 1 to ${CHECKLIST_HARD_MAX}`);
       }
       if (typeof spec.min === 'number' && typeof spec.max === 'number' && spec.min > spec.max) {
         err(`field "${fname}" min is greater than max`);
@@ -152,6 +156,7 @@ export function validateDefinition(def, roles = config.roles) {
     }
   }
   if (def.extendSchema !== undefined && typeof def.extendSchema !== 'function') err('extendSchema must be a function');
+  if (def.comments !== undefined && typeof def.comments !== 'boolean') err('comments must be true or false');
   if (def.genericDisabled !== undefined) {
     if (!isStrArr(def.genericDisabled)) err('genericDisabled must be an array of actions');
     else for (const a of def.genericDisabled) if (!GENERIC_ACTIONS.includes(a)) err(`genericDisabled has unknown action "${a}" (allowed: create, update, delete)`);
@@ -195,6 +200,9 @@ export function buildSchema(def) {
         p = f.multiple
           ? { type: [{ type: String, enum: f.values }], default: undefined }
           : { type: String, enum: f.values };
+        break;
+      case 'checklist':
+        p = { type: [{ _id: false, text: { type: String, trim: true, maxlength: 200 }, done: { type: Boolean, default: false } }], default: [] };
         break;
       case 'ref':
         p = { type: mongoose.Schema.Types.ObjectId, ref: refModelName(f.ref) };

@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Table, THead, TBody, TR, TH, TD } from '../ui/display';
 import { StatusBadge } from './StatusBadge';
 import { displayValue, recordTitle } from '../../lib/format';
 import { cn } from '../../lib/utils';
+import { isSortable, sortDirection } from '../../lib/listViews';
 
 /** Fields shown as columns: `list: true` (falls back to the first four fields). */
 export function listColumns(resource) {
@@ -29,14 +30,40 @@ function Check({ checked, indeterminate = false, onChange, label }) {
   );
 }
 
+const INTERACTIVE = 'a,button,input,select,textarea,label,summary,[role="button"],[data-no-row-click]';
+
+/** Sortable column header: a button inside the `<th>`, with `aria-sort` and an arrow icon. */
+function SortHeader({ field, sort, onSort }) {
+  const dir = sortDirection(sort, field.name);
+  const Icon = dir === 'asc' ? ArrowUp : dir === 'desc' ? ArrowDown : ArrowUpDown;
+  return (
+    <TH aria-sort={dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : 'none'}>
+      <button
+        type="button"
+        onClick={() => onSort(field.name)}
+        className={cn(
+          'inline-flex items-center gap-1 rounded uppercase tracking-wide hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          dir && 'text-foreground'
+        )}
+      >
+        {field.label}
+        <Icon className={cn('h-3 w-3', !dir && 'opacity-50')} aria-hidden />
+      </button>
+    </TH>
+  );
+}
+
 /**
- * Records table (Req 13.3). The title column links to the detail page; on small screens
- * rows collapse into a stacked card layout.
+ * Records table (Req 13.3). The whole row opens the record (the title stays a real link for
+ * keyboard, screen readers and "open in new tab"); on small screens rows collapse into cards.
  *
  * Optional row selection for bulk actions (Req 16.14): pass `selected` (a Set of ids) and
  * `onSelectedChange(nextSet)`. Without them the table renders exactly as before.
+ *
+ * Optional sorting: pass `sort` (the `sort` URL param) and `onSort(fieldName)`.
  */
-export function ResourceTable({ resource, items, selected, onSelectedChange }) {
+export function ResourceTable({ resource, items, selected, onSelectedChange, sort, onSort }) {
+  const navigate = useNavigate();
   const cols = listColumns(resource);
   const sField = statusField(resource);
   const title = resource.titleField ?? cols[0]?.name;
@@ -59,6 +86,21 @@ export function ResourceTable({ resource, items, selected, onSelectedChange }) {
     onSelectedChange(next);
   };
   const nameOf = (item) => recordTitle(resource, item);
+  const hrefOf = (item) => `/r/${resource.key}/${item._id}`;
+
+  // Row click opens the record unless the click started on a control or ended a text selection.
+  const openRow = (e, item) => {
+    if (e.defaultPrevented || e.button > 0) return;
+    if (e.target.closest?.(INTERACTIVE)) return;
+    if (typeof window !== 'undefined' && window.getSelection?.()?.toString()) return;
+    if (e.ctrlKey || e.metaKey) window.open(hrefOf(item), '_blank', 'noopener');
+    else navigate(hrefOf(item));
+  };
+  const auxRow = (e, item) => {
+    if (e.button !== 1 || e.target.closest?.(INTERACTIVE)) return;
+    e.preventDefault();
+    window.open(hrefOf(item), '_blank', 'noopener');
+  };
 
   return (
     <>
@@ -72,15 +114,24 @@ export function ResourceTable({ resource, items, selected, onSelectedChange }) {
                   <Check checked={allChecked} indeterminate={someChecked} onChange={toggleAll} label="Select all on this page" />
                 </TH>
               )}
-              {cols.map((c) => <TH key={c.name}>{c.label}</TH>)}
+              {cols.map((c) => (
+                typeof onSort === 'function' && isSortable(c)
+                  ? <SortHeader key={c.name} field={c} sort={sort} onSort={onSort} />
+                  : <TH key={c.name}>{c.label}</TH>
+              ))}
               <TH className="w-8"><span className="sr-only">Open</span></TH>
             </TR>
           </THead>
           <TBody>
             {items.map((item) => (
-              <TR key={item._id} className={cn(selectable && selected.has(item._id) && 'bg-primary/5')}>
+              <TR
+                key={item._id}
+                onClick={(e) => openRow(e, item)}
+                onAuxClick={(e) => auxRow(e, item)}
+                className={cn('cursor-pointer hover:bg-muted focus-within:bg-muted/60', selectable && selected.has(item._id) && 'bg-primary/5')}
+              >
                 {selectable && (
-                  <TD className="w-10">
+                  <TD className="w-10" data-no-row-click>
                     <Check checked={selected.has(item._id)} onChange={() => toggle(item._id)} label={`Select ${nameOf(item)}`} />
                   </TD>
                 )}
@@ -123,7 +174,7 @@ export function ResourceTable({ resource, items, selected, onSelectedChange }) {
                 <Check checked={selected.has(item._id)} onChange={() => toggle(item._id)} label={`Select ${nameOf(item)}`} />
               </div>
             )}
-            <Link to={`/r/${resource.key}/${item._id}`} className="flex min-w-0 flex-1 items-start gap-3 px-1 py-3 hover:bg-muted/40">
+            <Link to={`/r/${resource.key}/${item._id}`} className="flex min-w-0 flex-1 items-start gap-3 rounded px-1 py-3 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{nameOf(item)}</p>
                 <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">

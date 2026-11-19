@@ -82,7 +82,7 @@ export function NotificationBell() {
       </Button>
 
       {open && (
-        <div role="region" aria-label="Notifications" className="absolute right-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border bg-card shadow-xl">
+        <div role="region" aria-label="Notifications" className="fixed inset-x-4 top-16 z-40 animate-fade-up rounded-lg border bg-card shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[22rem]">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <h2 className="text-sm font-semibold">Notifications</h2>
             {unread > 0 && (
@@ -90,13 +90,13 @@ export function NotificationBell() {
             )}
           </div>
           {data?.items?.length ? (
-            <ul className="max-h-96 overflow-y-auto">
+            <ul className="max-h-[min(24rem,60dvh)] overflow-y-auto overscroll-contain">
               {data.items.map((n) => (
                 <li key={n._id}>
                   <button
                     type="button"
                     onClick={() => openItem(n)}
-                    className={cn('flex w-full gap-2 border-b px-3 py-2.5 text-left text-sm last:border-0 hover:bg-accent', !n.readAt && 'bg-primary/5')}
+                    className={cn('flex w-full gap-2 border-b px-3 py-2.5 text-left text-sm transition-colors last:border-0 hover:bg-accent focus-visible:bg-accent focus-visible:ring-inset focus-visible:ring-offset-0', !n.readAt && 'bg-primary/5')}
                   >
                     <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.readAt ? 'bg-muted' : KIND_DOT[n.kind] ?? KIND_DOT.info)} aria-hidden />
                     <span className="min-w-0 flex-1">
