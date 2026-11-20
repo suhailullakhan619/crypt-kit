@@ -14,7 +14,7 @@ const APPS = {
   lab: { base: 'http://localhost:5172', admin: /^LabManager/i, extra: ['/insights', '/my-checkouts'] },
   pantry: { base: 'http://localhost:5173', admin: /^Coordinator/i, extra: ['/intake', '/distribute', '/insights', '/impact'] },
 };
-const wanted = process.argv.slice(2).filter((a) => APPS[a]);
+const wanted = [...process.argv.slice(2), ...(process.env.E2E_APPS ?? '').split(',')].map((s) => s.trim()).filter((a) => APPS[a]);
 const apps = wanted.length ? wanted : Object.keys(APPS);
 const browser = await chromium.launch({ channel: process.env.CHROME_CHANNEL ?? 'chrome', headless: !process.env.HEADED });
 
@@ -142,6 +142,21 @@ for (const app of apps) {
         if (await page.getByRole('button', { name: /^Edit$/ }).waitFor({ timeout: 6000 }).then(() => true, () => false)) { editUrl = `${cfg.base}/r/${r.key}/${rec._id}`; break; }
       }
       if (editUrl) await visit(page, app, theme, vp.n, 'edit dialog', editUrl, async () => { await page.getByRole('button', { name: /^Edit$/ }).click(); await page.getByRole('dialog').waitFor(); });
+      // chat answers: a list of records, an overview, and (Crypt Kit) a command waiting for Confirm
+      const chat = async (q) => {
+        await page.goto(`${cfg.base}/voice`);
+        await page.getByLabel('Or type a question').fill(q);
+        await page.getByRole('button', { name: 'Ask', exact: true }).click();
+        await page.getByText('You asked').waitFor({ timeout: 15000 });
+        await page.waitForFunction(() => !/Consulting the spirits/.test(document.body.innerText), null, { timeout: 15000 });
+      };
+      const overdueQ = { skeleton: 'which notes are over due', lab: 'which checkouts are over due', pantry: 'what is overdue' }[app];
+      await visit(page, app, theme, vp.n, 'chat overdue', `${cfg.base}/voice`, () => chat(overdueQ));
+      await visit(page, app, theme, vp.n, 'chat overview', `${cfg.base}/voice`, () => chat('what is on my plate'));
+      if (app === 'skeleton') {
+        await visit(page, app, theme, vp.n, 'chat confirm card', `${cfg.base}/voice`, async () => { await chat('add a note to buy candles due friday high priority'); await page.getByRole('group', { name: 'Confirm this change' }).waitFor(); });
+        await visit(page, app, theme, vp.n, 'chat total', `${cfg.base}/voice`, () => chat('show my notes due this week'));
+      }
       await visit(page, app, theme, vp.n, 'notifications', `${cfg.base}/`, async () => { await page.getByRole('button', { name: /^Notifications/ }).click(); await page.waitForTimeout(500); });
       await visit(page, app, theme, vp.n, 'sign out dialog', `${cfg.base}/`, async () => { await page.getByRole('button', { name: 'Sign out' }).first().click(); await page.getByRole('dialog').waitFor(); });
       await ctx.close();

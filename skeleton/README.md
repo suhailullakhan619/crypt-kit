@@ -70,6 +70,8 @@ The server validates these at start-up and stops with a message naming the varia
 | `MAIL_REPLY_TO` | — | Optional reply address |
 | `MAIL_ALLOW_TEST_DOMAINS` | `false` | Deliver to `.test` / `.example` addresses (only for a local fake mail server) |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | — | Optional owner account (superuser) created by the seed. Both email and password, password at least 8 characters |
+| `BEDROCK_MODEL_ID` | — | Optional chat assistant for free-form questions (Amazon Bedrock model or inference-profile ID). Off unless set. Needs AWS credentials with `bedrock:InvokeModel` from the usual sources (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, or a role) |
+| `AWS_REGION` | `us-east-1` | Region of that Bedrock model |
 | `OPENAI_API_KEY` | — | Optional; enables Whisper + TTS |
 | `VOICE_PROVIDER` | auto | `openai` when a key is set, otherwise `browser` (Web Speech API) |
 
@@ -123,7 +125,7 @@ None of these require editing `core/`.
 | Custom endpoints | `server/src/routes/app/*.js` (default-export an express Router) |
 | Background jobs | `server/src/jobs/app/*.js` → `{ name, schedule, run, runAtBoot }` |
 | Dashboard panels | `server/src/dashboard/*.js` → `{ key, title, roles, load }`, plus optional `client/src/dashboard/<key>.jsx` |
-| Voice questions | `server/src/intents/*.js` → `{ name, match, handle, respond, examples }` |
+| Voice questions | `server/src/intents/*.js` → `{ name, match, handle, respond, examples }`. App intents are tried first; anything they do not match falls through to the built-in question parser (`core/queryParser.js`), which needs no code. Commands that change data should return a draft (`data.draft`) and let the user confirm, as `intents/actions.js` does |
 | Rich voice answers | `client/src/voice/<INTENT>.jsx` |
 | Custom PDF reports | `reportService.createReport({ title, resource, user, count, render(doc, h) })` |
 | Extra pages / sidebar links | `client/src/appRoutes.jsx` |
@@ -142,10 +144,10 @@ npm run summon -- my-app "My App"
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest + fast-check, 227 tests: correctness properties, integration, accounts,
+npm test --prefix server     # Jest + fast-check, 292 tests: correctness properties, integration, accounts,
                              # email, CSV, notifications, voice, reports (jest.config.js runs the core
                              # suites against the frozen config in test/core/)
-npm test --prefix client     # Vitest, 163 tests: permission mirror property, role-based UI, accounts, QR and
+npm test --prefix client     # Vitest, 174 tests: permission mirror property, role-based UI, accounts, QR and
                              # scan, dialogs, voice states, WCAG contrast
 npm run smoke --prefix server  # boots demo mode and runs 31 HTTP checks
 ```

@@ -4,13 +4,13 @@ Two scripts drive real Chrome (through `playwright-core`, using the Chrome insta
 
 | Script | Runs against | Changes data? | Steps |
 |---|---|---|---|
-| `features.mjs` | the three apps running locally in demo mode | yes (in-memory demo data) | skeleton 61, lab 56, pantry 47 |
-| `themes.mjs` | the three apps running locally in demo mode | no | every page, dark and light, desktop and phone (412 screens) |
+| `features.mjs` | the three apps running locally in demo mode | yes (in-memory demo data) | skeleton 72, lab 60, pantry 51 |
+| `themes.mjs` | the three apps running locally in demo mode | no | every page and chat answer, dark and light, desktop and phone (444 screens) |
 | `live.mjs` | the deployed sites | no, it never submits a form | 36 (every demo role of every app) |
 
 ## `features.mjs`: every feature, locally
 
-Covers sign-in per role, CRUD, sign-up with approval, forgot and reset password, change password, reservations, CSV import and export, saved views, Insights, PDF downloads, donor receipts, notifications, the email test button, QR cards and short IDs, typing an ID and scanning a photo of a QR code on the scan page, label sheets, signed-out QR links, whole-row clicks, column sorting, the Ctrl+K search palette, comments (post, reload, delete), board moves, calendar, the Mine filter, subtasks, duplicate, every dialog's position on desktop and mobile, mobile layouts, and a sweep for `[object Object]`, `undefined` and `NaN` on every page.
+Covers sign-in per role, CRUD, sign-up with approval, forgot and reset password, change password, reservations, CSV import and export, saved views, Insights, PDF downloads, donor receipts, notifications, the email test button, QR cards and short IDs, typing an ID and scanning a photo of a QR code on the scan page, label sheets, signed-out QR links, whole-row clicks, column sorting, the Ctrl+K search palette, comments (post, reload, delete), board moves, calendar, the Mine filter, subtasks, duplicate, the chat assistant (plain-words questions, links in answers, confirm and cancel on commands, a reminder in the India timezone), every dialog's position on desktop and mobile, mobile layouts, and a sweep for `[object Object]`, `undefined` and `NaN` on every page.
 
 1. Start the three apps in **demo mode** (in-memory data, nothing touches a real database) on these
    ports, each client proxying to its own API:
@@ -26,7 +26,7 @@ Covers sign-in per role, CRUD, sign-up with approval, forgot and reset password,
 2. ```bash
    cd e2e && npm install
    npm test                         # everything
-   node features.mjs lab pantry     # only some sections: skeleton | lab | pantry | qr | ux | modules | dialogs | sweep
+   node features.mjs lab pantry     # only some sections: skeleton | lab | pantry | qr | ux | modules | chat | dialogs | sweep
    ```
 
 Each run changes data (it books slots, imports a lab, saves a donation), so restart the demo apps

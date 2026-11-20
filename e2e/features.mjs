@@ -21,8 +21,8 @@ const consoleErrors = [];
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-'));
 
 // ───────────── helpers ─────────────
-async function newPage(viewport = { width: 1440, height: 900 }) {
-  const ctx = await browser.newContext({ viewport, acceptDownloads: true });
+async function newPage(viewport = { width: 1440, height: 900 }, opts = {}) {
+  const ctx = await browser.newContext({ viewport, acceptDownloads: true, ...opts });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) consoleErrors.push(`console: ${m.text()}`); });
@@ -878,7 +878,7 @@ if (run('ux')) {
 }
 
 // ═════════════ Crypt Kit example modules: projects, reminders, goals, time log ═════════════
-if (run('modules')) {
+if (run('modules') && activeApps().some(([k]) => k === 'skeleton')) {
   const { base } = APPS.skeleton;
   const page = await newPage();
   await signIn(page, base, APPS.skeleton.admin);
@@ -985,6 +985,129 @@ if (run('modules')) {
     }
   });
   await mobile.context().close();
+}
+
+// ═════════════ chat assistant: plain-words questions, rich answers, confirm cards ═════════════
+const CHAT = {
+  skeleton: { overdue: 'which notes are over due', link: /\/r\/notes\/[0-9a-f]{24}$/ },
+  lab: { overdue: 'which checkouts are over due', link: /\/scan\/LL-\d{4}$/ },
+  pantry: { overdue: 'what is overdue', link: null },
+};
+async function chatAsk(page, text) {
+  const box = page.getByLabel('Or type a question');
+  await box.fill(text);
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
+  await page.getByText(`“${text}”`).waitFor({ timeout: 15000 });
+  await page.waitForFunction(() => !/Consulting the spirits/.test(document.body.innerText), null, { timeout: 15000 });
+  return page.locator('p.font-display').last().innerText();
+}
+if (run('chat')) {
+  for (const [app, cfg] of activeApps()) {
+    const c = CHAT[app];
+    const tag = `[chat ${app}]`;
+    const page = await newPage();
+    await signIn(page, cfg.base, cfg.admin);
+    await page.goto(`${cfg.base}/voice`);
+    await page.getByLabel('Or type a question').waitFor({ timeout: 15000 });
+
+    await step(`${tag} "${c.overdue}" is understood (spelling variants work) and the records are links`, async () => {
+      const a = await chatAsk(page, c.overdue);
+      if (/didn't catch|spirits/i.test(a)) throw new Error(`not understood: ${a}`);
+      if (!/overdue|nothing found|no \w+ found/i.test(a)) throw new Error(`unexpected answer: ${a}`);
+      if (c.link && !/Nothing is overdue/i.test(a)) {
+        const href = await page.getByRole('link').filter({ hasText: /./ }).evaluateAll((as) => as.map((x) => x.getAttribute('href')).find((h) => /\/(?:r\/[a-z-]+\/[0-9a-f]{24}|scan\/[A-Z]{1,3}-\d{4})$/.test(h ?? '')));
+        if (!href || !c.link.test(href)) throw new Error(`no record link in the answer (${href})`);
+      }
+      return a.slice(0, 60);
+    });
+    await step(`${tag} Greeting, help and "what is on my plate"`, async () => {
+      if (!/^Hello/.test(await chatAsk(page, 'hello'))) throw new Error('no greeting');
+      if (!/Try:/.test(await chatAsk(page, 'what can you do'))) throw new Error('no help');
+      const plate = await chatAsk(page, 'what is on my plate');
+      if (!/Overdue: \d+|All quiet/.test(plate)) throw new Error(plate);
+    });
+    await step(`${tag} Unrelated text gets a helpful reply with example questions`, async () => {
+      const a = await chatAsk(page, 'zzz qqq');
+      if (!/Try something like|Try asking/.test(a)) throw new Error(a);
+    });
+    await step(`${tag} The example chips show variety and one click asks the question`, async () => {
+      const chips = page.getByLabel('Example questions').getByRole('button');
+      if ((await chips.count()) < 4) throw new Error('too few example chips');
+      const text = (await chips.first().innerText()).replace(/[“”]/g, '').trim();
+      await chips.first().click();
+      await page.getByText(`“${text}”`).waitFor({ timeout: 15000 });
+    });
+
+    if (app === 'skeleton') {
+      const token = await page.evaluate(() => localStorage.getItem('crypt_token'));
+      const api = async (p) => (await fetch(`${cfg.base}/api${p}`, { headers: { Authorization: `Bearer ${token}` } })).json();
+      const stamp = Date.now();
+      await step(`${tag} "add a note…" shows a draft, saves nothing until Confirm, then creates it`, async () => {
+        const before = (await api('/r/notes?limit=1')).total;
+        await chatAsk(page, `add a note to e2e chat ${stamp} due friday high priority`);
+        await page.getByRole('group', { name: 'Confirm this change' }).waitFor({ timeout: 8000 });
+        if ((await api('/r/notes?limit=1')).total !== before) throw new Error('saved before Confirm');
+        await page.getByRole('button', { name: 'Confirm' }).click();
+        await page.getByRole('link', { name: 'Open it' }).waitFor({ timeout: 10000 });
+        const made = (await api(`/r/notes?q=${stamp}`)).items[0];
+        if (!made || made.priority !== 'High' || !made.dueDate) throw new Error(`note not created right: ${JSON.stringify(made)}`);
+      });
+      await step(`${tag} Cancel on a draft saves nothing`, async () => {
+        const before = (await api('/r/notes?limit=1')).total;
+        await chatAsk(page, `add a note called never saved ${stamp}`);
+        await page.getByRole('button', { name: 'Cancel' }).click();
+        await page.getByText(/Nothing was saved/).waitFor({ timeout: 5000 });
+        if ((await api('/r/notes?limit=1')).total !== before) throw new Error('note was saved');
+      });
+      await step(`${tag} "mark N-… as done" moves an open note after Confirm`, async () => {
+        const open = (await api('/r/notes?status=Open&limit=1')).items[0];
+        await chatAsk(page, `mark ${open.code} as done`);
+        await page.getByRole('button', { name: 'Confirm' }).click();
+        await page.getByRole('link', { name: 'Open it' }).waitFor({ timeout: 10000 });
+        if ((await api(`/r/notes/${open._id}`)).item.status !== 'Done') throw new Error('status not changed');
+      });
+      await step(`${tag} "log 30 minutes on …" creates a time entry for today`, async () => {
+        await chatAsk(page, `log 30 minutes on e2e chat time ${stamp}`);
+        await page.getByRole('button', { name: 'Confirm' }).click();
+        await page.getByRole('link', { name: 'Open it' }).waitFor({ timeout: 10000 });
+        const e = (await api(`/r/time-entries?q=${stamp}`)).items[0];
+        if (!e || e.minutes !== 30) throw new Error(`entry wrong: ${JSON.stringify(e)}`);
+      });
+      await step(`${tag} Questions with filters, dates and totals are answered from real data`, async () => {
+        const high = await chatAsk(page, 'how many high priority notes are open');
+        if (!/There (is|are) \d+ notes? \(/.test(high) && !/No notes found/.test(high)) throw new Error(high);
+        const mins = await chatAsk(page, 'total minutes in the time log this month');
+        if (!/Total minutes over \d+ records? in Time log/.test(mins)) throw new Error(mins);
+        const mine = await chatAsk(page, 'show my notes due this week');
+        if (/didn't catch/.test(mine)) throw new Error(mine);
+      });
+      await step(`${tag} Look up by ID: "tell me about N-0001" gives details and a link`, async () => {
+        const a = await chatAsk(page, 'tell me about N-0001');
+        if (!/^Notes: "/.test(a)) throw new Error(a);
+        await page.getByRole('link', { name: /Open N-0001/ }).waitFor({ timeout: 5000 });
+      });
+    }
+    await page.context().close();
+
+    if (app === 'skeleton') {
+      // "tomorrow at 5pm" must mean 5pm where the user is (here: India, UTC+5:30), not on the server
+      const ist = await newPage({ width: 1440, height: 900 }, { timezoneId: 'Asia/Kolkata' });
+      await signIn(ist, cfg.base, cfg.admin);
+      const token = await ist.evaluate(() => localStorage.getItem('crypt_token'));
+      await step(`${tag} "remind me … tomorrow at 5pm" uses the user's own timezone`, async () => {
+        await ist.goto(`${cfg.base}/voice`);
+        const title = `e2e tz ${Date.now()}`;
+        await chatAsk(ist, `remind me to ${title} tomorrow at 5pm`);
+        await ist.getByRole('button', { name: 'Confirm' }).click();
+        await ist.getByRole('link', { name: 'Open it' }).waitFor({ timeout: 10000 });
+        const got = (await (await fetch(`${cfg.base}/api/r/reminders?q=${encodeURIComponent(title)}`, { headers: { Authorization: `Bearer ${token}` } })).json()).items[0];
+        const shifted = new Date(Date.now() + 5.5 * 3600000); // the clock in India
+        const expected = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate() + 1, 17, 0) - 5.5 * 3600000;
+        if (new Date(got.remindAt).getTime() !== expected) throw new Error(`remindAt ${got.remindAt}, expected ${new Date(expected).toISOString()}`);
+      });
+      await ist.context().close();
+    }
+  }
 }
 
 // ═════════════ summary ═════════════

@@ -37,6 +37,7 @@ export default function VoiceAgent() {
   const audioRef = useRef(null);
   const [state, setState] = useState('idle');
   const [result, setResult] = useState(null);
+  const [answerId, setAnswerId] = useState(0); // new answer, new card: a confirm card must not keep the last answer's state
   const [error, setError] = useState(null);
   const [text, setText] = useState('');
 
@@ -56,6 +57,7 @@ export default function VoiceAgent() {
     try {
       const res = await ask(api, question);
       setResult(res);
+      setAnswerId((n) => n + 1);
       if (speak) {
         setState('speaking');
         await speech.speak(res.answer);
@@ -79,6 +81,7 @@ export default function VoiceAgent() {
         setState('thinking');
         const res = await voiceQuery(api, blob);
         setResult(res);
+        setAnswerId((n) => n + 1);
         setState('speaking');
         const url = URL.createObjectURL(res.audio);
         audioRef.current.src = url;
@@ -155,7 +158,7 @@ export default function VoiceAgent() {
           <p className="mt-1 text-sm">“{result.transcript}”</p>
           <p className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Answer</p>
           <p className="mt-1 font-display text-xl leading-snug">{result.answer}</p>
-          {Renderer && <div className="mt-4"><Renderer result={result} /></div>}
+          {Renderer && <div className="mt-4"><Renderer key={answerId} result={result} /></div>}
         </Card>
       )}
     </div>
