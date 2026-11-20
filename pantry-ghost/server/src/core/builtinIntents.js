@@ -1,20 +1,11 @@
 import { escapeRegex } from '../utils/escapeRegex.js';
 import { can } from './permissions.js';
-import { normaliseUtterance } from './utterance.js';
+import { normaliseUtterance, spokenValue, synonymsOf } from './utterance.js';
+import { assistantIntents } from './assistantIntents.js';
 
 const DAY = 86400000;
 
-/** 'CheckedOut' → 'checked out', 'Under Maintenance' → 'under maintenance' */
-export function spokenValue(value) {
-  return normaliseUtterance(String(value).replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' '));
-}
-
-/** Spoken synonyms for a resource (voice.synonyms or derived from label/key), normalised. */
-export function synonymsOf(def) {
-  const raw = def.voice?.synonyms?.length ? def.voice.synonyms : [def.label, def.key.replace(/-/g, ' ')];
-  return [...new Set(raw.map((s) => normaliseUtterance(s)).filter(Boolean))];
-}
-
+export { spokenValue, synonymsOf };
 const alt = (words) =>
   [...words].sort((a, b) => b.length - a.length).map(escapeRegex).join('|');
 
@@ -103,9 +94,16 @@ export function builtinIntents(registry) {
           const filter = { ...baseFilter(def), [def.due.status]: def.due.to };
           const [count, items] = await Promise.all([
             r.model.countDocuments(filter),
-            r.model.find(filter).sort({ [def.due.field]: 1 }).limit(5).select({ [titleField]: 1 }).lean(),
+            r.model.find(filter).sort({ [def.due.field]: 1 }).limit(5).select({ [titleField]: 1, [def.due.field]: 1, [def.due.status]: 1 }).lean(),
           ]);
-          return { count, names: items.map((i) => String(i[titleField] ?? 'untitled')) };
+          return {
+            count,
+            names: items.map((i) => String(i[titleField] ?? 'untitled')),
+            // the same shape as the general QUERY answer, so the page can show the records as links
+            kind: 'query', resource: r.key, label: def.label, total: count, hasMore: count > items.length,
+            items: items.map((i) => ({ _id: String(i._id), title: String(i[titleField] ?? 'untitled'), status: i[def.due.status] ?? null, due: i[def.due.field] ?? null })),
+            link: `/r/${r.key}?${def.due.status}=${encodeURIComponent(def.due.to)}`,
+          };
         },
         respond: ({ count, names }) =>
           count === 0
@@ -140,5 +138,7 @@ export function builtinIntents(registry) {
     });
   }
 
+  // General questions, lookups, overview, help and greetings: after every specific intent.
+  intents.push(...assistantIntents(registry));
   return intents;
 }

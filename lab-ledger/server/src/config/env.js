@@ -103,6 +103,12 @@ export function loadEnv(src = {}) {
   const MAIL = smtpSet === 4
     ? { host: smtp.host, port: smtpPort, user: smtp.user, pass: smtp.pass, from: smtp.from, replyTo: str('MAIL_REPLY_TO'), allowTestDomains: str('MAIL_ALLOW_TEST_DOMAINS')?.toLowerCase() === 'true' }
     : null;
+  // Optional chat assistant for questions the built-in parser cannot read (Amazon Bedrock). Off unless a model is named.
+  // Credentials come from the standard AWS sources (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, or an IAM role).
+  const modelId = str('BEDROCK_MODEL_ID');
+  if (modelId && !/^[A-Za-z0-9._:/-]{3,200}$/.test(modelId)) throw new EnvError('BEDROCK_MODEL_ID may only contain letters, digits and . _ : / -');
+  const ASSISTANT = modelId ? { modelId, region: str('AWS_REGION') ?? str('BEDROCK_REGION') ?? 'us-east-1' } : null;
+
   // Optional owner account created by the seed (the superuser role). Kept in .env, never in code,
   // so the password is not committed. Both email and password are needed.
   const adminEmail = str('SEED_ADMIN_EMAIL');
@@ -124,6 +130,7 @@ export function loadEnv(src = {}) {
     PORT,
     MAIL,
     SEED_ADMIN,
+    ASSISTANT,
     MONGODB_DB_NAME: useUri ? MONGODB_DB_NAME : null,
     SEED_ON_BOOT,
     // Demo mode uses the in-memory server (MONGODB_URI null) unless DEMO_PERSIST=true.

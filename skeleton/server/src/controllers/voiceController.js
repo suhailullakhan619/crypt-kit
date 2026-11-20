@@ -6,7 +6,7 @@ import { httpError } from '../utils/httpError.js';
 
 /** POST /api/voice/ask — body { text } → 200 { transcript, intent, answer, data } */
 export const ask = asyncHandler(async (req, res) => {
-  res.status(200).json(await voiceService.answer(req.body?.text, req.user));
+  res.status(200).json(await voiceService.answer(req.body?.text, req.user, { tzOffset: Number(req.body?.tzOffset) }));
 });
 
 /**

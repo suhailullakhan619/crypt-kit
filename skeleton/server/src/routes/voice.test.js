@@ -57,9 +57,9 @@ describe('voice routes', () => {
     useTestContext();
     const app = await createApp();
     expect((await request(app).post('/api/voice/query').set(auth).attach('audio', audio, { filename: 'q.webm', contentType: 'audio/webm' })).status).toBe(400);
-    const ask = await request(app).post('/api/voice/ask').set(auth).send({ text: 'hello?' });
+    const ask = await request(app).post('/api/voice/ask').set(auth).send({ text: 'zzz qqq?' });
     expect(ask.status).toBe(200);
-    expect(ask.body).toMatchObject({ transcript: 'hello?', intent: 'UNKNOWN' });
+    expect(ask.body).toMatchObject({ transcript: 'zzz qqq?', intent: 'UNKNOWN' });
     const ex = await request(app).get('/api/voice/examples').set(auth);
     expect(ex.body).toMatchObject({ provider: 'browser', examples: [] });
   });
