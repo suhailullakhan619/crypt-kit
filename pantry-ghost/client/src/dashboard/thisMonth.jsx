@@ -30,7 +30,7 @@ export default function ThisMonthPanel({ data }) {
       </div>
       <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>{data.month}</span>
-        {(isSuperuser || role === 'Board') && <Link to="/impact" className="font-medium text-primary hover:underline">Open the impact report →</Link>}
+        {(isSuperuser || role === 'Board') && <Link to="/impact" className="inline-block py-1.5 font-medium text-primary hover:underline">Open the impact report →</Link>}
       </p>
     </div>
   );

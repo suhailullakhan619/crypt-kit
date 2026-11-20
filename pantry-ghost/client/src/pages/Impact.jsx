@@ -62,7 +62,7 @@ export default function Impact() {
         description="One click from shelf to grant report: what came in, what went out, who we reached."
         icon={<ChartColumn className="h-6 w-6 text-primary" />}
         actions={
-          <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); generate.mutate(); }}>
+          <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); generate.mutate(); }}>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="impact-month" className="text-xs text-muted-foreground">Month</Label>
               <Input id="impact-month" type="month" value={month} max={currentMonth()} onChange={(e) => setMonth(e.target.value)} required className="w-44" />

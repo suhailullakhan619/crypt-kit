@@ -62,7 +62,7 @@ export function CalendarView({ resource, filters, month, onMonthChange }) {
     return (
       <Link
         to={`/r/${resource.key}/${item._id}`}
-        className={cn('block truncate rounded px-1.5 py-0.5 text-xs hover:underline', overdue ? 'bg-destructive/10 font-medium text-destructive' : 'bg-primary/10 text-foreground')}
+        className={cn('block truncate rounded px-1.5 py-1 text-xs hover:underline', overdue ? 'bg-destructive/10 font-medium text-destructive' : 'bg-primary/10 text-foreground')}
       >
         {recordTitle(resource, item)}{overdue && <span className="sr-only"> (overdue)</span>}
       </Link>

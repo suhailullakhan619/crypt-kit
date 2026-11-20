@@ -155,9 +155,9 @@ export default function VoiceAgent() {
       {result && (
         <Card className="animate-fade-up p-5" aria-live="polite">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">You asked</p>
-          <p className="mt-1 text-sm">“{result.transcript}”</p>
+          <p className="mt-1 break-words text-sm">“{result.transcript}”</p>
           <p className="mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Answer</p>
-          <p className="mt-1 font-display text-xl leading-snug">{result.answer}</p>
+          <p className="mt-1 break-words font-display text-xl leading-snug">{result.answer}</p>
           {Renderer && <div className="mt-4"><Renderer key={answerId} result={result} /></div>}
         </Card>
       )}

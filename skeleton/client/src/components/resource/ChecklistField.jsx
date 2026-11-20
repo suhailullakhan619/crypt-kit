@@ -53,16 +53,18 @@ export function ChecklistChecks({ value, onChange, label = 'Checklist' }) {
       <ChecklistProgress value={items} />
       <ul aria-label={label} className="flex flex-col gap-1">
         {items.map((it, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <input
-              id={`${base}-${i}`}
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              checked={!!it.done}
-              disabled={!onChange}
-              onChange={() => onChange(items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))}
-            />
-            <label htmlFor={`${base}-${i}`} className={cn('min-w-0 flex-1 break-words text-sm', it.done && 'text-muted-foreground line-through')}>{it.text}</label>
+          <li key={i}>
+            <label htmlFor={`${base}-${i}`} className={cn('flex min-h-8 items-start gap-2 py-1', onChange && 'cursor-pointer')}>
+              <input
+                id={`${base}-${i}`}
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                checked={!!it.done}
+                disabled={!onChange}
+                onChange={() => onChange(items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))}
+              />
+              <span className={cn('min-w-0 flex-1 break-words text-sm', it.done && 'text-muted-foreground line-through')}>{it.text}</span>
+            </label>
           </li>
         ))}
       </ul>
@@ -106,13 +108,15 @@ export function ChecklistEditor({ field, value, onChange, id }) {
       <ul className="flex flex-col gap-1.5">
         {items.map((it, i) => (
           <li key={i} className="flex items-center gap-1.5">
-            <input
-              type="checkbox"
-              className="h-4 w-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Done: ${it.text}`}
-              checked={!!it.done}
-              onChange={() => patch(i, { done: !it.done })}
-            />
+            <label className="grid h-8 w-8 shrink-0 cursor-pointer place-items-center">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Done: ${it.text}`}
+                checked={!!it.done}
+                onChange={() => patch(i, { done: !it.done })}
+              />
+            </label>
             <Input
               aria-label={`Item ${i + 1}`}
               value={it.text}

@@ -98,7 +98,7 @@ Demo mode starts an in-memory MongoDB replica set (transactions work) and seeds 
 
 ```bash
 npm test --prefix server     # Jest, 346 tests: skeleton suites ("core" project) + Lab Ledger suites ("app" project)
-npm test --prefix client     # Vitest, 180 tests: skeleton UI tests + Lab Ledger pages, dialogs, scan, contrast
+npm test --prefix client     # Vitest, 184 tests: skeleton UI tests + Lab Ledger pages, dialogs, scan, contrast
 npm run smoke --prefix server   # boots demo mode and runs 40 HTTP checks (SMOKE_PORT to change the port)
 ```
 

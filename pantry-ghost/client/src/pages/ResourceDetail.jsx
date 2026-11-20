@@ -108,7 +108,7 @@ export default function ResourceDetail() {
 
   return (
     <div>
-      <Link to={`/r/${key}`} className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link to={`/r/${key}`} className="mb-2 inline-flex items-center gap-1 py-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" aria-hidden /> {resource.label}
       </Link>
       <PageHeader

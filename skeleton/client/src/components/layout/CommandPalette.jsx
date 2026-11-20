@@ -141,7 +141,7 @@ export function CommandPalette({ open, onOpenChange }) {
             aria-activedescendant={flat.length ? `cmdk-opt-${active}` : undefined}
             autoComplete="off"
             spellCheck={false}
-            className="h-11 w-full border-0 bg-transparent text-base shadow-none outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:text-sm"
+            className="h-11 w-full min-w-0 border-0 bg-transparent text-base shadow-none outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 sm:text-sm"
             placeholder="Search records, or type a page name…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

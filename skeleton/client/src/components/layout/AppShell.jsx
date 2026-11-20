@@ -28,15 +28,15 @@ function Topbar({ onMenu, onSearch }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur md:px-6">
-      <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenu} aria-label="Open navigation menu">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-1 border-b bg-background/80 px-2 backdrop-blur min-[400px]:gap-2 min-[400px]:px-4 md:px-6">
+      <Button variant="ghost" size="icon" className="shrink-0 md:hidden" onClick={onMenu} aria-label="Open navigation menu">
         <Menu className="h-5 w-5" />
       </Button>
-      <div className="flex items-center gap-2 md:hidden">
-        <Logo className="h-6 w-6" />
-        <span className="font-display font-semibold">{appName}</span>
+      <div className="flex min-w-0 items-center gap-2 md:hidden">
+        <Logo className="h-6 w-6 shrink-0" />
+        <span className="hidden truncate font-display font-semibold min-[360px]:inline">{appName}</span>
       </div>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-0.5 min-[400px]:gap-1">
         <Button variant="outline" size="sm" onClick={onSearch} aria-label="Search everything" title="Search everything (Ctrl K)" className="text-muted-foreground">
           <Search className="h-4 w-4" aria-hidden />
           <span className="hidden sm:inline">Search…</span>

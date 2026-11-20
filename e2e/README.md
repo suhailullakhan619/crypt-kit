@@ -5,6 +5,7 @@ Two scripts drive real Chrome (through `playwright-core`, using the Chrome insta
 | Script | Runs against | Changes data? | Steps |
 |---|---|---|---|
 | `features.mjs` | the three apps running locally in demo mode | yes (in-memory demo data) | skeleton 72, lab 60, pantry 51 |
+| `responsive.mjs` | the live sites, or any local copy | no | every page at 5 widths (about 100 screens per site) |
 | `themes.mjs` | the three apps running locally in demo mode | no | every page and chat answer, dark and light, desktop and phone (444 screens) |
 | `live.mjs` | the deployed sites | no, it never submits a form | 36 (every demo role of every app) |
 
@@ -44,6 +45,15 @@ node themes.mjs skeleton lab         # only some
 ```
 
 Signs in as each app's admin role and opens every page (lists, detail, new, Board and Calendar views, the search palette, Edit, notifications and sign-out dialogs) in dark and light, at 1440 px and 375 px, and also the signed-out pages. For each screen it saves a screenshot to `c:/Kiro/sites/logs/themes/` (set `THEME_OUT` to change that) and checks the page for text below WCAG AA contrast (4.5:1, or 3:1 for large text), form controls that stayed white in dark mode, a theme that did not switch, and sideways scrolling. It exits with 1 if anything is flagged. Run it after changing colours or shared components.
+
+## `responsive.mjs`: every page at five screen widths
+
+```bash
+cd e2e && npm run responsive                              # the three live sites
+node responsive.mjs http://localhost:5172                 # one local copy
+```
+
+Signs in with the first one-click demo role and opens every page (lists, detail, new, Board and Calendar, the search palette, the chat with an answer, notifications and the phone menu) at 320, 375, 768, 1024 and 1440 px, with touch emulation on phones and tablets. It flags a page that scrolls sideways, elements sticking out past the screen edge (outside a deliberate scroll area), tap targets smaller than 24 x 24 px (WCAG 2.5.8) and a missing viewport tag. Screenshots go to `c:/Kiro/sites/logs/responsive/`. It exits with 1 if anything is flagged.
 
 ## `live.mjs`: read-only check of the deployed sites
 

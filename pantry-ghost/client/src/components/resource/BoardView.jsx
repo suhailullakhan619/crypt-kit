@@ -35,7 +35,7 @@ function MoveMenu({ label, targets, onMove }) {
         aria-expanded={open}
         aria-label={`Move ${label} to…`}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex items-center gap-1 rounded border px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <MoveRight className="h-3 w-3" aria-hidden /> Move to…
       </button>
@@ -78,7 +78,7 @@ function BoardCard({ resource, item, status, canMove, onDragStart, onDragEnd, on
       className={cn('rounded-md border bg-card p-3 text-sm shadow-sm', targets.length > 0 && 'cursor-grab active:cursor-grabbing')}
     >
       <div className="flex items-start justify-between gap-2">
-        <Link to={`/r/${resource.key}/${item._id}`} className="min-w-0 break-words font-medium hover:text-primary hover:underline">{title}</Link>
+        <Link to={`/r/${resource.key}/${item._id}`} className="min-w-0 break-words py-1 font-medium hover:text-primary hover:underline">{title}</Link>
         {item.shortId && <span className="shrink-0 text-xs text-muted-foreground">{item.shortId}</span>}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

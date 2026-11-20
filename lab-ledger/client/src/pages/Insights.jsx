@@ -26,7 +26,7 @@ function Stat({ label, value }) {
 
 function UsageTable({ title, rows, empty }) {
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
       <CardContent className="px-0 md:px-0">
         {rows.length === 0 ? (

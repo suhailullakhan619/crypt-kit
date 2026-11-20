@@ -137,7 +137,7 @@ export default function Dashboard() {
                 <ul className="flex flex-col gap-2">
                   {attention.map((r) => (
                     <li key={r.key} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 transition-colors hover:bg-muted/50">
-                      <Link to={`/r/${r.key}`} className="flex min-w-[6rem] flex-1 items-center gap-2 text-sm font-medium hover:text-primary">
+                      <Link to={`/r/${r.key}`} className="flex min-w-[6rem] flex-1 items-center gap-2 py-1.5 text-sm font-medium hover:text-primary">
                         <ResourceIcon name={r.icon} /> <span className="truncate">{r.label}</span>
                       </Link>
                       <span className="flex flex-wrap gap-1.5">

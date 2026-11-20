@@ -18,15 +18,16 @@ function statusField(resource) {
 
 function Check({ checked, indeterminate = false, onChange, label }) {
   return (
-    <input
-      type="checkbox"
-      aria-label={label}
-      checked={checked}
-      ref={(el) => { if (el) el.indeterminate = indeterminate; }}
-      onChange={onChange}
-      onClick={(e) => e.stopPropagation()}
-      className="h-4 w-4 cursor-pointer rounded border-input accent-[hsl(var(--primary))]"
-    />
+    <label className="-m-1.5 inline-flex cursor-pointer p-1.5" onClick={(e) => e.stopPropagation()}>
+      <input
+        type="checkbox"
+        aria-label={label}
+        checked={checked}
+        ref={(el) => { if (el) el.indeterminate = indeterminate; }}
+        onChange={onChange}
+        className="h-4 w-4 cursor-pointer rounded border-input accent-[hsl(var(--primary))]"
+      />
+    </label>
   );
 }
 
@@ -42,7 +43,7 @@ function SortHeader({ field, sort, onSort }) {
         type="button"
         onClick={() => onSort(field.name)}
         className={cn(
-          'inline-flex items-center gap-1 rounded uppercase tracking-wide hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'inline-flex items-center gap-1 rounded py-2 uppercase tracking-wide hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           dir && 'text-foreground'
         )}
       >

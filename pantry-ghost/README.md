@@ -79,7 +79,7 @@ The first run downloads a MongoDB binary (about 600 MB, cached in `server/node_m
 
 ```bash
 npm test --prefix server                    # Jest, 359 tests: skeleton suites + Pantry Ghost properties P1–P6, integration
-npm test --prefix client                    # Vitest, 174 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
+npm test --prefix client                    # Vitest, 178 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
 npm run smoke --prefix server               # boots demo mode and walks the demo path over HTTP (30 checks)
 ```
 

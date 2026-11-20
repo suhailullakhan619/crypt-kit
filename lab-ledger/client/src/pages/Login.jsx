@@ -81,7 +81,7 @@ export default function Login() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                {pub?.passwordReset && <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link>}
+                {pub?.passwordReset && <Link to="/forgot-password" className="inline-block py-2 text-xs font-medium text-primary hover:underline">Forgot password?</Link>}
               </div>
               <PasswordInput id="password" autoComplete="current-password" aria-invalid={!!errors.password}
                 {...register('password', { required: 'Password is required' })} />
