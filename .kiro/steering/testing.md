@@ -23,5 +23,5 @@ fileMatchPattern: "**/*.test.{js,jsx}"
   ```
 - Use `fc.assert(fc.asyncProperty(...), { numRuns: 100 })`. Lower `numRuns` only for DB-backed properties, and never below 25.
 - When fast-check finds a counterexample, **paste the shrunk counterexample into a regular unit test** before fixing the bug, so it never regresses.
-- Tests must not need AWS credentials. Inject a fake Polly client with `setSpeechClientForTests`.
+- Voice tests fake `window.speechSynthesis`; they never need a microphone, speaker or any key.
 - Tests must not depend on wall-clock time. Inject `now` into functions that compare dates.

@@ -10,9 +10,9 @@ Everything in the repository is done and tested. These items need you, because t
 - [ ] Decide the **Kiro Crew** bonus: only if you actually built a separate Crew app and have its repo. Otherwise ignore it.
 - [ ] `.kiro/settings/mcp.json` points the MongoDB MCP server at `mongodb://localhost:27017/crypt-kit`, which does not exist on a machine without a local MongoDB. Either start one, change it, or remove that entry, so a judge who opens the config is not misled.
 
-## 2. Turn on Amazon Polly voices (optional, 15 minutes)
+## 2. Nothing to turn on for voice
 
-Follow `docs/POLLY.md`. Do it locally first with `npm run voice:test --prefix skeleton/server`; when it prints "Polly answered", add `VOICE_PROVIDER=polly`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` on the three Render services and check `/api/health` says `"voiceProvider": "polly"`. Never paste the keys into chat or commit them.
+Answers are read aloud by the browser with no keys. Open the Voice agent once on the device you will record on and listen: the voice depends on what that browser has installed (Edge and Chrome on Windows have the best ones).
 
 ## 3. Record the demo video (about 90 minutes)
 

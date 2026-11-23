@@ -39,16 +39,14 @@ flowchart LR
 - Seen state is `localStorage['crypt-tour:<userId>']`. Automatic opening requires production, no `navigator.webdriver` and not seen; `?tour=1` forces it.
 - `AppShell` owns the open state and passes `onTour` to the palette, which adds a "Take the tour" entry under Help.
 
-### Polly voice check (Req 4)
+### Spoken answers (Req 4)
 
-- `server/src/services/speechService.js` wraps `@aws-sdk/client-polly` (loaded on first use, so the server starts without AWS keys) and holds `explainAwsError(err)`, a pure function with a table of error names to advice, unit tested.
-- `POST /api/voice/speak` (authenticated, 1 to 1500 characters, 30 per user per 10 minutes) returns `audio/mpeg`; it answers 400 unless `VOICE_PROVIDER=polly`, and 502 with a plain-language message when Polly fails.
-- `server/scripts/voice-test.js` reads the same environment the server does (`loadEnv`), speaks one sentence, saves the mp3 and prints the advice from `explainAwsError` on failure.
-- `VoiceAgent` plays the Polly audio and falls back to `speechSynthesis`; a "Read answers aloud" checkbox (localStorage `crypt_read_aloud`) turns speaking off.
-- `docs/POLLY.md` documents variables, the minimal IAM policy and the common errors.
+- `useSpeech.pickVoice(voices, lang)` scores installed voices (natural/neural first, then Google and well-known clear voices, robotic and novelty voices excluded, exact region preferred). `splitSentences` breaks an answer into short utterances; a run counter stops a cancelled answer from continuing.
+- `VoiceAgent` calls `speech.speak`; a "Read answers aloud" checkbox (localStorage `crypt_read_aloud`) turns it off.
+- The server has no audio code. `VOICE_PROVIDER` is fixed at `browser` and reported by `/api/health` and `/api/voice/examples`.
 
 ## Testing strategy
-- Unit: `tour.test.js` (`buildSteps`, `shouldAutoOpen` truth table), `Tour.test.jsx` (steps, keyboard, remember, replay), `OfflineBanner.test.jsx`, `registerSW.test.js`, `speech.test.js` (Polly wrapper, `explainAwsError`), `voice.test.js` (endpoint), `pollyVoice.test.jsx` (playback, fallback, checkbox).
+- Unit: `tour.test.js` (`buildSteps`, `shouldAutoOpen` truth table), `Tour.test.jsx` (steps, keyboard, remember, replay), `OfflineBanner.test.jsx`, `registerSW.test.js`, `voice.test.js` (endpoints, no audio routes), `voiceReadAloud.test.jsx` (voice choice, sentence splitting, checkbox).
 - Build: a test runs `vite build` output check that `dist` holds the manifest, icons and a stamped `sw.js`.
 - Browser (local, production build served by `vite preview`): the manifest is valid and linked, the service worker activates, the app shell loads offline, API calls are not in the cache, the tour opens with `?tour=1` and not again after Skip.
 

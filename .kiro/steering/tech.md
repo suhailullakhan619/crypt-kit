@@ -13,7 +13,7 @@ inclusion: always
 - Security: `helmet`, `cors` (origin from `CLIENT_URL`), `express.json({ limit: '1mb' })`.
 - Jobs: `node-cron`.
 - PDF: `pdfkit`.
-- Voice: the browser's Web Speech API for listening and, by default, speaking. Optional Amazon Polly (`@aws-sdk/client-polly`) for spoken answers when `VOICE_PROVIDER=polly`; the server must run without AWS keys, and the client falls back to the browser voice if Polly fails.
+- Voice: the browser's Web Speech API for listening and speaking (`useSpeech`, which picks the best natural voice and speaks sentence by sentence). No cloud speech service, no keys.
 - Tests: Jest 29 run with `--experimental-vm-modules`, `fast-check` for property-based tests, `supertest` for HTTP and `mongodb-memory-server` for integration.
 
 **Client** (`*/client`)

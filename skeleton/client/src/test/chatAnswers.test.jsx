@@ -15,7 +15,7 @@ vi.mock('../api/meta', () => ({
   publicMeta: vi.fn(async () => ({})),
 }));
 vi.mock('../api/resources', () => ({ createRecord: vi.fn(), updateRecord: vi.fn(), listRecords: vi.fn(), getRecord: vi.fn(), recordActivity: vi.fn() }));
-vi.mock('../api/voice', () => ({ ask: vi.fn(), examples: vi.fn(async () => ({ examples: ['what is on my plate'], provider: 'browser' })), speakAudio: vi.fn() }));
+vi.mock('../api/voice', () => ({ ask: vi.fn(), examples: vi.fn(async () => ({ examples: ['what is on my plate'], provider: 'browser' })) }));
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }));
 
 beforeEach(() => { localStorage.clear(); signIn({ role: 'Member' }); vi.clearAllMocks(); });

@@ -11,7 +11,7 @@ const PORT = Number(process.env.SMOKE_PORT ?? 5061);
 const base = `http://127.0.0.1:${PORT}/api`;
 const DAY = 86400000;
 const child = spawn(process.execPath, ['src/server.js'], {
-  env: { ...process.env, DEMO_MODE: 'true', PORT: String(PORT), VOICE_PROVIDER: '', CLIENT_URL: 'http://localhost:5173' },
+  env: { ...process.env, DEMO_MODE: 'true', PORT: String(PORT), CLIENT_URL: 'http://localhost:5173' },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 

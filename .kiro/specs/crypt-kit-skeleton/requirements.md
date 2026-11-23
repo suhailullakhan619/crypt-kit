@@ -1,6 +1,6 @@
 # Requirements Document
 
-> **Change note (Kiroween 2026, voice):** the Amazon Bedrock assistant and the OpenAI voice provider were removed. Chat answers come from the built-in rule-based query engine only. Spoken answers use Amazon Polly (`VOICE_PROVIDER=polly`, `POST /api/voice/speak`) with an automatic fallback to the browser voice. Requirements below that mention Bedrock or OpenAI describe the earlier design.
+> **Change note (Kiroween 2026, voice):** the Amazon Bedrock assistant, the OpenAI voice provider and an interim Amazon Polly provider were all removed. Chat answers come from the built-in rule-based query engine only, and answers are read aloud by the browser (`useSpeech.pickVoice` chooses the best natural voice). Requirements below that mention Bedrock, OpenAI or Polly describe earlier designs.
 
 
 ## Introduction

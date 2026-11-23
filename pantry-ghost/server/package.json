@@ -14,11 +14,9 @@
     "seed": "node src/seed/cli.js",
     "smoke": "node scripts/smoke.js",
     "mail:test": "node scripts/mail-test.js",
-    "voice:test": "node scripts/voice-test.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
-    "@aws-sdk/client-polly": "^3.1172.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

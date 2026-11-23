@@ -26,13 +26,13 @@ I wanted the ten things done once, properly, so that the next tool is a handful 
 - **Lab Ledger**, for teaching labs: request, approve and return equipment (two people can never both win the same item), reservations, calibration schedules that raise their own alerts, QR asset tags and printable label sheets, usage insights.
 - **Pantry Ghost**, for food banks: say a donation and it drafts the stock entry, packs boxes first-expiry-first-out, warns about expiry and low stock, prints thank-you receipts and monthly impact reports. It never stores a household's name or address, and a test proves the Board role can never see a household code.
 
-**The chat assistant** answers in plain words from your own data: "which items are overdue", "total minutes I logged this week", "what is on my plate", "tell me about LL-0007". Answers link to the records. It only reads, and only what the asker may see. Commands ("add a note to buy candles due friday", "remind me tomorrow at 5pm", "log 30 minutes on the report", "mark N-0006 as done") produce a draft with Confirm and Cancel, and nothing is saved until Confirm. Answers can be read aloud, by the browser voice or by Amazon Polly.
+**The chat assistant** answers in plain words from your own data: "which items are overdue", "total minutes I logged this week", "what is on my plate", "tell me about LL-0007". Answers link to the records. It only reads, and only what the asker may see. Commands ("add a note to buy candles due friday", "remind me tomorrow at 5pm", "log 30 minutes on the report", "mark N-0006 as done") produce a draft with Confirm and Cancel, and nothing is saved until Confirm. Answers can be read aloud in a natural voice.
 
 ## How I built it
 
 The skeleton is a Node and Express API on MongoDB with a React and Vite client. The skeleton's **Core** (resource engine, permissions, status flows, the generic screens) is *byte-identical* in all three apps, and a script (`npm run check:core`) proves it by hash. App-specific behaviour goes through documented extension points, never by editing Core.
 
-The assistant is a small query engine. A question becomes a structured spec (resource, filters, date range, totals); the engine checks the asker's read permission, queries only declared fields and caps the result size. A rule-based parser handles most questions with no AI. Answers can be read aloud with the browser voice or, when switched on, Amazon Polly.
+The assistant is a small query engine. A question becomes a structured spec (resource, filters, date range, totals); the engine checks the asker's read permission, queries only declared fields and caps the result size. A rule-based parser handles most questions with no AI. Answers are read aloud with the best natural voice the device has.
 
 **With Kiro:** [CONFIRM AND EDIT: the sentences below describe what is in the repository; only keep the ones that match what you did.]
 - Three finished **specs** (`.kiro/specs`: requirements, design and a task list with property-based test targets) drive the skeleton and both apps; a fourth, `field-ready`, was written before the installable app, the tour and the assistant check were built.
@@ -60,11 +60,11 @@ Reuse only works if the shared part is *enforced*, not just agreed. Checking ide
 
 ## What's next
 
-More apps from the same skeleton (a clinic roster, a classroom library), push notifications for installed apps, and Amazon Polly voices on the live sites once keys are in.
+More apps from the same skeleton (a clinic roster, a classroom library), push notifications for installed apps.
 
 ## Built with
 
-Kiro, JavaScript, React, Vite, Tailwind CSS, TanStack Query, Node.js, Express, MongoDB and Mongoose, MongoDB Atlas, Netlify, Render, Amazon Polly (optional), Playwright, Jest, Vitest, fast-check, Brevo (email), PDFKit.
+Kiro, JavaScript, React, Vite, Tailwind CSS, TanStack Query, Node.js, Express, MongoDB and Mongoose, MongoDB Atlas, Netlify, Render, Playwright, Jest, Vitest, fast-check, Brevo (email), PDFKit.
 
 ## Try it out (links)
 

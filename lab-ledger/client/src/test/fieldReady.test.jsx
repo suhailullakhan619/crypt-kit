@@ -18,7 +18,7 @@ vi.mock('../api/meta', () => ({
   meta: vi.fn(async () => ({ appName: 'Test App', roles: ['Admin', 'Member'], superuserRole: 'Admin', resources })),
   publicMeta: vi.fn(async () => ({})),
 }));
-vi.mock('../api/voice', () => ({ examples: vi.fn(async () => ({ examples: ['help', 'which notes are over due'], provider: 'browser' })), ask: vi.fn(), speakAudio: vi.fn() }));
+vi.mock('../api/voice', () => ({ examples: vi.fn(async () => ({ examples: ['help', 'which notes are over due'], provider: 'browser' })), ask: vi.fn() }));
 vi.mock('../api/search', () => ({ searchAll: vi.fn(async () => []) }));
 vi.mock('../qrCodes', () => ({ default: { notes: { idField: 'code' } } }));
 

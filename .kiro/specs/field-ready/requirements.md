@@ -2,7 +2,7 @@
 
 ## Introduction
 
-"Field-ready" makes the three portals feel like products rather than demos, for the two places they are actually used: on a phone in a lab or a pantry, and in front of a first-time visitor. It adds an installable app with an offline shell, a first-run tour, a way to verify Amazon Polly spoken answers before they go live, and the written material a reviewer needs (demo script, write-up, blog post).
+"Field-ready" makes the three portals feel like products rather than demos, for the two places they are actually used: on a phone in a lab or a pantry, and in front of a first-time visitor. It adds an installable app with an offline shell, a first-run tour, a clean, natural voice for spoken answers, and the written material a reviewer needs (demo script, write-up, blog post).
 
 All client changes live in the skeleton and reach Lab Ledger and Pantry Ghost through the normal copy, so Core stays byte-identical (`npm run check:core`).
 
@@ -11,7 +11,7 @@ All client changes live in the skeleton and reach Lab Ledger and Pantry Ghost th
 - **PWA**: a web app the browser can install to the home screen, with its own icon and window.
 - **App shell**: the HTML, CSS and JavaScript that draw the interface, as opposed to the records it shows.
 - **Tour**: a short sequence of dialogs shown on a user's first visit that points out the three or four things worth knowing.
-- **Polly**: Amazon Polly, the optional text-to-speech service that reads chat answers aloud (`VOICE_PROVIDER=polly`).
+- **Voice**: the browser's speech synthesis, with the best natural voice on the device chosen automatically.
 
 ---
 
@@ -55,19 +55,18 @@ All client changes live in the skeleton and reach Lab Ledger and Pantry Ghost th
 5. THE tour SHALL NOT open automatically in development builds, in tests or in automated browsers; `?tour=1` SHALL open it on demand anywhere.
 6. THE search palette SHALL offer "Take the tour" so a user can replay it.
 
-### Requirement 4: Verify Amazon Polly before relying on it
+### Requirement 4: Spoken answers in a clean voice
 
-**User Story:** As the owner, I want a one-command check of my AWS setup, so that I know spoken answers work before I turn them on for visitors.
+**User Story:** As a user, I want answers read aloud in a natural voice, so that the assistant is pleasant to listen to, without accounts or keys.
 
-> Re-scoped: this requirement originally covered a Bedrock assistant check (`assistant:test`), which was removed.
+> Re-scoped: this requirement originally covered a Bedrock assistant check, then an Amazon Polly check. Both were removed.
 
 #### Acceptance Criteria
 
-1. THE server SHALL provide `npm run voice:test`, which checks the configuration, asks Polly to speak one sentence, saves the audio to the temp folder and prints a clear result.
-2. WHEN the call fails, THE script SHALL translate the common AWS errors (missing or wrong credentials, expired credentials, missing permission, unknown voice, unsupported engine) into the action to take.
-3. THE script SHALL never print credentials.
-4. WHEN `VOICE_PROVIDER` is not `polly`, `POST /api/voice/speak` SHALL answer 400 and the client SHALL use the browser voice; WHEN Polly fails, THE client SHALL fall back to the browser voice.
-5. THE repository SHALL document the minimum IAM policy (`polly:SynthesizeSpeech`) and the environment variables (`docs/POLLY.md`).
+1. THE client SHALL read each answer aloud with the best installed voice for the user's language, preferring natural or neural voices, then Google and well-known clear system voices, and never a robotic or novelty voice.
+2. THE client SHALL speak sentence by sentence, so long answers are not cut off by the browser.
+3. A "Read answers aloud" checkbox SHALL turn speaking off, and the choice SHALL be remembered.
+4. THE server SHALL expose no audio endpoint and SHALL need no speech credentials; `GET /api/health` reports `voiceProvider: "browser"`.
 
 ### Requirement 5: Reviewer-facing material
 

@@ -16,7 +16,6 @@ export class EnvError extends Error {
   }
 }
 
-const VOICE_PROVIDERS = ['polly', 'browser'];
 
 /**
  * Validates a raw environment object and returns a frozen, typed config.
@@ -24,7 +23,7 @@ const VOICE_PROVIDERS = ['polly', 'browser'];
  *
  * @param {Record<string, string | undefined>} src - usually process.env
  * @returns {Readonly<{PORT:number, MONGODB_URI:string|null, JWT_SECRET:string, CLIENT_URL:string,
- *   DEMO_MODE:boolean, POLLY:object|null, VOICE_PROVIDER:'polly'|'browser'}>}
+ *   DEMO_MODE:boolean, VOICE_PROVIDER:'browser'}>}
  * @throws {EnvError} naming the offending variable
  */
 export function loadEnv(src = {}) {
@@ -49,20 +48,8 @@ export function loadEnv(src = {}) {
     throw new EnvError('MONGODB_URI is required (or set DEMO_MODE=true)');
   }
 
-  // Speech output with Amazon Polly. Off unless VOICE_PROVIDER=polly; the browser's own voice is the fallback.
-  // Credentials come from the standard AWS sources (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, or an IAM role).
-  const voiceRaw = str('VOICE_PROVIDER')?.toLowerCase() ?? null;
-  if (voiceRaw && !VOICE_PROVIDERS.includes(voiceRaw)) {
-    throw new EnvError(`VOICE_PROVIDER must be one of ${VOICE_PROVIDERS.join(', ')} (got "${voiceRaw}")`);
-  }
-  const VOICE_PROVIDER = voiceRaw ?? 'browser';
-  const voiceId = str('POLLY_VOICE_ID') ?? 'Joanna';
-  if (!/^[A-Za-z]{2,30}$/.test(voiceId)) throw new EnvError('POLLY_VOICE_ID must be a voice name such as Joanna');
-  const engine = (str('POLLY_ENGINE') ?? 'neural').toLowerCase();
-  if (!['neural', 'standard'].includes(engine)) throw new EnvError('POLLY_ENGINE must be neural or standard');
-  const region = str('POLLY_REGION') ?? str('AWS_REGION') ?? 'us-east-1';
-  if (VOICE_PROVIDER === 'polly' && !/^[a-z]{2}(-[a-z]+)+-\d$/.test(region)) throw new EnvError(`POLLY_REGION must look like us-east-1 (got "${region}")`);
-  const POLLY = VOICE_PROVIDER === 'polly' ? { voiceId, engine, region } : null;
+  // Answers are read aloud by the browser's own speech synthesis, so there is nothing to configure or pay for.
+  const VOICE_PROVIDER = 'browser';
 
   // Optional database-name override. Mongoose uses it instead of the name in MONGODB_URI, so the same
   // cluster URI can serve a separate "<app>_test" database and the original database is never touched.
@@ -129,7 +116,6 @@ export function loadEnv(src = {}) {
     PORT,
     MAIL,
     SEED_ADMIN,
-    POLLY,
     MONGODB_DB_NAME: useUri ? MONGODB_DB_NAME : null,
     SEED_ON_BOOT,
     // Demo mode uses the in-memory server (MONGODB_URI null) unless DEMO_PERSIST=true.

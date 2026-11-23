@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Mic, Square, Send, Volume2 } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { useSpeech, canRecognise } from '../hooks/useSpeech';
-import { ask, examples as fetchExamples, speakAudio } from '../api/voice';
+import { ask, examples as fetchExamples } from '../api/voice';
 import { PageHeader } from '../components/layout/AppShell';
 import { Card } from '../components/ui/display';
 import { Button } from '../components/ui/button';
@@ -26,13 +26,12 @@ const STATUS_TEXT = {
 
 /**
  * Voice agent (Req 11.4-11.10). Listening uses the browser's SpeechRecognition; typing always works.
- * Answers are spoken with Amazon Polly when the server has it switched on (provider "polly"), and with the
- * browser's own voice otherwise, or whenever Polly fails, so a spoken answer never depends on AWS.
+ * Answers are read aloud with the best natural voice the device has (see `pickVoice`), and the
+ * "Read answers aloud" checkbox turns that off. No audio ever leaves the browser.
  */
 export default function VoiceAgent() {
   const api = useApi();
   const speech = useSpeech();
-  const audioRef = useRef(null);
   const [state, setState] = useState('idle');
   const [result, setResult] = useState(null);
   const [answerId, setAnswerId] = useState(0); // new answer, new card: a confirm card must not keep the last answer's state
@@ -41,33 +40,12 @@ export default function VoiceAgent() {
   const [text, setText] = useState('');
 
   const { data: ex } = useQuery({ queryKey: ['voice', 'examples'], queryFn: () => fetchExamples(api) });
-  const provider = ex?.provider ?? 'browser';
   const micAvailable = canRecognise();
 
   const toggleReadAloud = (on) => {
     setReadAloud(on);
     localStorage.setItem(READ_ALOUD_KEY, on ? 'on' : 'off');
-    if (!on) { audioRef.current?.pause?.(); window.speechSynthesis?.cancel?.(); }
-  };
-  /** Speaks an answer: Polly first when it is on, the browser voice if Polly is off or fails. */
-  const sayAloud = async (answer) => {
-    if (provider === 'polly') {
-      try {
-        const blob = await speakAudio(api, answer);
-        const url = URL.createObjectURL(blob);
-        const audio = audioRef.current;
-        await new Promise((resolve, reject) => {
-          audio.src = url;
-          audio.onended = resolve;
-          audio.onerror = () => reject(new Error('audio'));
-          Promise.resolve(audio.play()).catch(reject);
-        }).finally(() => URL.revokeObjectURL(url));
-        return;
-      } catch {
-        /* fall through to the browser voice */
-      }
-    }
-    await speech.speak(answer);
+    if (!on) speech.stopSpeaking();
   };
   const fail = (err) => {
     setError(errorMessage(err));
@@ -84,7 +62,7 @@ export default function VoiceAgent() {
       setAnswerId((n) => n + 1);
       if (speak && readAloud) {
         setState('speaking');
-        await sayAloud(res.answer);
+        await speech.speak(res.answer);
       }
       setState('idle');
     } catch (err) {
@@ -147,7 +125,7 @@ export default function VoiceAgent() {
 
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" checked={readAloud} onChange={(e) => toggleReadAloud(e.target.checked)} />
-          Read answers aloud{provider === 'polly' ? ' (Amazon Polly)' : ''}
+          Read answers aloud
         </label>
         {ex?.examples?.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2" aria-label="Example questions">
@@ -159,7 +137,6 @@ export default function VoiceAgent() {
             ))}
           </div>
         )}
-        <audio ref={audioRef} className="hidden" />
       </Card>
 
       {result && (
