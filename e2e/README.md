@@ -8,6 +8,7 @@ Two scripts drive real Chrome (through `playwright-core`, using the Chrome insta
 | `pwa.mjs` | a production build (`vite preview`) or a live site | no (signs in and looks) | 8: installability, service worker, offline shell, no cached API data, the tour |
 | `screenshots.mjs` | the three local demo apps | no | writes `docs/screenshots/*.png` for the README |
 | `responsive.mjs` | the live sites, or any local copy | no | every page at 5 widths (about 100 screens per site) |
+| `slowserver.mjs` | one local app (run with `e2e-app.ps1 -Probe slowserver.mjs`) | no (it only reads) | 5: the "server is waking up" notice appears for a slow API, is announced, becomes "ready", and never shows for a fast one |
 | `themes.mjs` | the three apps running locally in demo mode | no | every page and chat answer, dark and light, desktop and phone (about 490 screens) |
 | `live.mjs` | the deployed sites | no, it never submits a form | 36 (every demo role of every app) |
 

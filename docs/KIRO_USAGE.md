@@ -12,9 +12,9 @@
 
 | | Server tests | Client tests | Smoke (HTTP) | Real-browser steps | Core drift |
 |---|---|---|---|---|---|
-| Crypt Kit (skeleton) | 281 | 208 | 31/31 | 72 | — |
-| Lab Ledger | 335 | 214 | 40/40 | 60 | identical |
-| Pantry Ghost | 348 | 208 | 30/30 | 51 | identical |
+| Crypt Kit (skeleton) | 281 | 217 | 31/31 | 72 | — |
+| Lab Ledger | 335 | 223 | 40/40 | 60 | identical |
+| Pantry Ghost | 348 | 217 | 30/30 | 51 | identical |
 
 Also run on all three: an installability check on the production build (8 steps each), a dark and light audit of every page (about 130 to 160 screens each), a five-width responsive audit (about 100 screens each) and a read-only check of the live sites (36 steps). Summon script: 5 tests (`node:test`).
 

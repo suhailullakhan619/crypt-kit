@@ -133,6 +133,7 @@ Demo accounts cannot change or reset their password, so the one-click demo keeps
 | **Chat assistant** | The Voice agent page answers typed or spoken questions in plain words, with no AI needed: any resource by its spoken names (plurals and small typos), statuses and other values ("high priority", "not done"), "overdue" in any spelling, dates ("due this week", "added last month", "friday"), "mine" or "assigned to Igor", text ("about candles"), totals ("total minutes this week", "how many hours did I log"), an overview ("what is on my plate"), lookup by ID ("tell me about N-0006"), help and greetings. Answers list the records as links, with "see all". Dates follow the user's own timezone. In Crypt Kit it also takes commands, "add a note to buy candles due friday", "remind me to call mum tomorrow at 5pm", "log 30 minutes on the report", "mark N-0006 as done", and shows a draft with **Confirm** and **Cancel**: nothing is saved until Confirm. Answers can be read aloud in a natural voice, and the checkbox turns that off. |
 | **Installable and offline-ready** | Each portal is a web app with its own icon: use *Add to Home screen* and it opens like an app, and still opens (with an "offline" banner) when there is no connection. A service worker keeps only the app shell; it never stores records or anything from the API. |
 | **First-run tour** | A 30-second dialog on a first visit points out search, the assistant, scanning and the theme toggle. Replay it from the search box ("tour"). |
+| **Slow-server notice** | The free hosting puts the API to sleep when idle. If any request is still waiting after 4 seconds, a notice says the server is waking up (up to a minute), changes wording after 25 seconds, and turns into "The server is ready." when it answers. Fast requests show nothing. |
 | **Duplicate** | The detail page's *Duplicate* button opens a prefilled new-record form (IDs, status and unique fields are left out, subtasks come back unticked). |
 | **Roles and permissions** | Ordered roles in `crypt.config.js`; the first is the superuser. The server enforces every permission and the UI hides what you cannot do. |
 | **Accounts** | *Create an account* on the login page: new accounts wait until an admin presses **Approve** on Users. *Forgot password* emails a one-time reset link that expires after 30 minutes. *Change password* is the key icon in the top bar. Password fields have a show/hide (eye) button, and signing out asks for confirmation. |
@@ -159,9 +160,9 @@ npm run smoke --prefix lab-ledger/server   # boots demo mode and runs the HTTP c
 
 | | Server | Client | Smoke | Browser (e2e) |
 |---|---|---|---|---|
-| Skeleton | 281 | 208 | 31 checks | 72 steps |
-| Lab Ledger | 335 | 214 | 40 checks | 60 steps |
-| Pantry Ghost | 348 | 208 | 30 checks | 51 steps |
+| Skeleton | 281 | 217 | 31 checks | 72 steps |
+| Lab Ledger | 335 | 223 | 40 checks | 60 steps |
+| Pantry Ghost | 348 | 217 | 30 checks | 51 steps |
 
 The browser suite in [`e2e/`](e2e) drives real Chrome through every feature (sign-in per role, CRUD, accounts, CSV, notifications and email, QR cards, scanning a photo of a QR, label sheets, clickable rows, sorting, board and calendar views, search palette, comments, subtasks, duplicate, dialogs on desktop and mobile, and a sweep for `[object Object]`). `npm run live --prefix e2e` runs a read-only pass over the three live sites (36 steps, every demo role). `npm run responsive --prefix e2e` opens every page at five widths from 320 to 1440 px and flags sideways scrolling and tap targets under 24 px. `npm run themes --prefix e2e` visits every page of the local portals in dark and light, on desktop and phone, saves a screenshot of each and fails on unreadable text, white form controls or sideways scrolling (about 490 screens, including the chat answers, the tour and the offline banner, none flagged).
 
