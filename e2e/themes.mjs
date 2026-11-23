@@ -157,6 +157,19 @@ for (const app of apps) {
         await visit(page, app, theme, vp.n, 'chat confirm card', `${cfg.base}/voice`, async () => { await chat('add a note to buy candles due friday high priority'); await page.getByRole('group', { name: 'Confirm this change' }).waitFor(); });
         await visit(page, app, theme, vp.n, 'chat total', `${cfg.base}/voice`, () => chat('show my notes due this week'));
       }
+      // hover states count for contrast too: hover the primary "New …" button and a destructive one
+      await visit(page, app, theme, vp.n, 'hover primary button', `${cfg.base}/r/${meta.resources[0].key}`, async () => {
+        const btn = page.getByRole('link', { name: /^New / }).first();
+        if (await btn.count()) await btn.hover(); else await page.getByRole('button', { name: /^(Export|Import) CSV$/ }).first().hover();
+        await page.waitForTimeout(300);
+      });
+      // the first-run tour (every step) and the offline banner
+      await visit(page, app, theme, vp.n, 'tour step 1', `${cfg.base}/?tour=1`, async () => { await page.getByRole('dialog').waitFor({ timeout: 10000 }); });
+      await visit(page, app, theme, vp.n, 'tour last step', `${cfg.base}/?tour=1`, async () => {
+        await page.getByRole('dialog').waitFor({ timeout: 10000 });
+        for (let i = 0; i < 6; i++) { const next = page.getByRole('button', { name: /^Next/ }); if (!(await next.count())) break; await next.click(); }
+      });
+      await visit(page, app, theme, vp.n, 'offline banner', `${cfg.base}/`, async () => { await page.evaluate(() => window.dispatchEvent(new Event('offline'))); await page.getByRole('status').filter({ hasText: /offline/i }).waitFor({ timeout: 5000 }); });
       await visit(page, app, theme, vp.n, 'notifications', `${cfg.base}/`, async () => { await page.getByRole('button', { name: /^Notifications/ }).click(); await page.waitForTimeout(500); });
       await visit(page, app, theme, vp.n, 'sign out dialog', `${cfg.base}/`, async () => { await page.getByRole('button', { name: 'Sign out' }).first().click(); await page.getByRole('dialog').waitFor(); });
       await ctx.close();

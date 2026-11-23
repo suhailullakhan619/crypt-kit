@@ -1,10 +1,72 @@
 # 🦴 Crypt Kit
 
-**Kiroween 2026 — Skeleton Crew entry.**
+**Kiroween 2026 · Skeleton Crew.** One skeleton, three working apps: describe your records once, and get the API, the screens, the permissions, the PDFs, the QR labels and a chat assistant for free.
 
-Crypt Kit is a lean, spec-driven full-stack skeleton. You describe your domain as **resource definitions** (fields, roles, status flow, due dates, voice synonyms). The skeleton then raises a working app from them: a REST API with role-based access control, auto-generated CRUD screens, a dashboard, PDF reports, scheduled "overdue" jobs, an activity log, notifications, comments, subtasks, board and calendar views, QR labels, search across everything and a voice agent that answers questions about your data.
+| Try it now | |
+|---|---|
+| 🦴 **Crypt Kit** (the skeleton, as a to-do suite) | https://crypt-kit.netlify.app |
+| 🧪 **Lab Ledger** (teaching-lab equipment) | https://leb-ledger.netlify.app |
+| 👻 **Pantry Ghost** (food-bank inventory) | https://pantry-ghost.netlify.app |
 
-Two very different apps are raised from the same bones:
+No sign-up needed: every login page has one-click demo buttons. The APIs sleep after 15 minutes idle (free hosting), so the very first request can take about a minute.
+
+## Try it in 60 seconds
+
+1. Open **Lab Ledger**, press **Student**, and pick *Scan a label*. Type `LL-0005` and request a checkout.
+2. Open the same site in a second tab as **Technician**, search `LL-0005` (Ctrl+K) and press **Approve**.
+3. Open the **Voice agent** and ask *"which items are overdue"*, *"what is on my plate"* or *"who has the oscilloscope"*. Answers list the records as links.
+4. On **Crypt Kit**, type *"add a note to buy candles due friday high priority"*. You get a draft with **Confirm** and **Cancel**; nothing is saved until you confirm.
+5. Open a note, tick a subtask, add a comment, then switch the list to **Board** and **Calendar**.
+6. On a phone, use *Add to Home screen*: each portal installs as its own app, and opens even without a connection.
+
+## Why it exists
+
+Small teams run on spreadsheets and paper: labs lose track of who has the oscilloscope, food banks throw away what expired on the shelf. Each of those tools needs the same ten things (sign-in, roles, lists, forms, history, notifications, reports, search…) and then a little of what makes it theirs. Crypt Kit is the ten things, done once and tested hard, so an app is a few resource files. Lab Ledger and Pantry Ghost are two such apps. They look and behave nothing alike, yet their shared core is **byte-identical** (`npm run check:core` proves it).
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  subgraph Browser
+    UI[React app: lists, forms, board, calendar, chat, search]
+    SW[Service worker: offline shell]
+  end
+  subgraph Netlify
+    CDN[Static client, one per app]
+  end
+  subgraph Render
+    API[Express API: auth, RBAC, resources, jobs]
+    Q[Query engine: read-only, permission-checked]
+    Core[Core: resource definitions, hooks, status flows]
+  end
+  DB[(MongoDB Atlas)]
+  LLM[[Amazon Bedrock: optional, read-only tools]]
+  Mail[[SMTP: notifications]]
+  CDN --> UI
+  UI --> SW
+  UI -->|JWT| API
+  API --> Core
+  Core --> DB
+  API --> Q
+  Q --> DB
+  Q -.->|only for free-form questions| LLM
+  API --> Mail
+```
+
+The one idea that matters: a **resource definition** (fields, roles, status flow, due rule) is the single source of truth. The server enforces it, the client renders from it, the chat assistant, the CSV import, the OpenAPI page and the tests read it too. A new app is new definitions, not new plumbing.
+
+## Screenshots
+
+| | | |
+|---|---|---|
+| ![Crypt Kit dashboard](docs/screenshots/crypt-dashboard.png) | ![Lab Ledger equipment with its QR label](docs/screenshots/lab-detail.png) | ![Pantry Ghost dashboard](docs/screenshots/pantry-dashboard.png) |
+| Crypt Kit: dashboard | Lab Ledger: an item, its QR label, comments | Pantry Ghost: what to use first |
+| ![Chat assistant answering from the records](docs/screenshots/crypt-chat.png) | ![Chat command waiting for confirmation](docs/screenshots/crypt-chat-command.png) | ![Board view](docs/screenshots/pantry-board.png) |
+| Ask in plain words, get links | Commands are drafts until you confirm | Board view by status |
+| ![Search palette in light mode](docs/screenshots/pantry-search-light.png) | ![Phone layout](docs/screenshots/lab-phone-list.png) | ![First-run tour](docs/screenshots/crypt-tour.png) |
+| Search everything (Ctrl+K), light theme | The same list on a phone | A 30-second tour on first visit |
+
+The three apps in this repository:
 
 | Folder | App | Who it's for | What it shows off |
 |---|---|---|---|
@@ -12,15 +74,7 @@ Two very different apps are raised from the same bones:
 | [`lab-ledger/`](lab-ledger) | **Lab Ledger** 🧪 | University teaching labs | Unique-item tracking: equipment checkout/return, reservations, calibration schedules, QR asset tags, "who has the oscilloscope?" by voice |
 | [`pantry-ghost/`](pantry-ghost) | **Pantry Ghost** 👻 | Community food banks | Quantity-based stock: donation intake by voice, first-expiry-first-out picking, expiry and low-stock alerts, donor receipts, impact reports |
 
-## Live demo
-
-| App | Site | API health |
-|---|---|---|
-| Crypt Kit (skeleton) | https://crypt-kit.netlify.app | https://crypt-kit.onrender.com/api/health |
-| Lab Ledger | https://leb-ledger.netlify.app | https://lab-ledger.onrender.com/api/health |
-| Pantry Ghost | https://pantry-ghost.netlify.app | https://pantry-ghost-4e86.onrender.com/api/health |
-
-Use the one-click demo buttons on each login page (accounts below). The APIs run on Render's free plan and sleep after 15 minutes without traffic, so the first request after that can take about a minute. The demo data is shared by every visitor.
+Raise your own with `npm run summon -- my-app`, then add resource files. The step-by-step is in [Raise your own app](#raise-your-own-app).
 
 ## Repository layout
 
@@ -79,6 +133,8 @@ Demo accounts cannot change or reset their password, so the one-click demo keeps
 | **Comments** | A thread on every record's detail page (on unless the definition says `comments: false`). Anyone who can read the record can comment; authors and the superuser can delete. The record's creator and the people assigned to it are notified. The history notes that a comment was added but never copies its text, so a deleted comment is gone everywhere. Limited to 30 per 15 minutes per user. |
 | **Search everywhere** | **Ctrl/Cmd + K**, **/** or the *Search…* button opens a palette that finds records in every resource you may read (up to 5 per resource), jumps to pages and starts *Create new …*. API: `GET /api/search?q=`. |
 | **Chat assistant** | The Voice agent page answers typed or spoken questions in plain words, with no AI needed: any resource by its spoken names (plurals and small typos), statuses and other values ("high priority", "not done"), "overdue" in any spelling, dates ("due this week", "added last month", "friday"), "mine" or "assigned to Igor", text ("about candles"), totals ("total minutes this week", "how many hours did I log"), an overview ("what is on my plate"), lookup by ID ("tell me about N-0006"), help and greetings. Answers list the records as links, with "see all". Dates follow the user's own timezone. In Crypt Kit it also takes commands, "add a note to buy candles due friday", "remind me to call mum tomorrow at 5pm", "log 30 minutes on the report", "mark N-0006 as done", and shows a draft with **Confirm** and **Cancel**: nothing is saved until Confirm. Optional: set `BEDROCK_MODEL_ID` to let an Amazon Bedrock model answer questions the rules cannot read. It can only call read-only lookups that are checked against the asker's permissions, and it never changes data. |
+| **Installable and offline-ready** | Each portal is a web app with its own icon: use *Add to Home screen* and it opens like an app, and still opens (with an "offline" banner) when there is no connection. A service worker keeps only the app shell; it never stores records or anything from the API. |
+| **First-run tour** | A 30-second dialog on a first visit points out search, the assistant, scanning and the theme toggle. Replay it from the search box ("tour"). |
 | **Duplicate** | The detail page's *Duplicate* button opens a prefilled new-record form (IDs, status and unique fields are left out, subtasks come back unticked). |
 | **Roles and permissions** | Ordered roles in `crypt.config.js`; the first is the superuser. The server enforces every permission and the UI hides what you cannot do. |
 | **Accounts** | *Create an account* on the login page: new accounts wait until an admin presses **Approve** on Users. *Forgot password* emails a one-time reset link that expires after 30 minutes. *Change password* is the key icon in the top bar. Password fields have a show/hide (eye) button, and signing out asks for confirmation. |
@@ -105,11 +161,11 @@ npm run smoke --prefix lab-ledger/server   # boots demo mode and runs the HTTP c
 
 | | Server | Client | Smoke | Browser (e2e) |
 |---|---|---|---|---|
-| Skeleton | 292 | 178 | 31 checks | 72 steps |
-| Lab Ledger | 346 | 184 | 40 checks | 60 steps |
-| Pantry Ghost | 359 | 178 | 30 checks | 51 steps |
+| Skeleton | 309 | 200 | 31 checks | 72 steps |
+| Lab Ledger | 363 | 206 | 40 checks | 60 steps |
+| Pantry Ghost | 376 | 200 | 30 checks | 51 steps |
 
-The browser suite in [`e2e/`](e2e) drives real Chrome through every feature (sign-in per role, CRUD, accounts, CSV, notifications and email, QR cards, scanning a photo of a QR, label sheets, clickable rows, sorting, board and calendar views, search palette, comments, subtasks, duplicate, dialogs on desktop and mobile, and a sweep for `[object Object]`). `npm run live --prefix e2e` runs a read-only pass over the three live sites (36 steps, every demo role). `npm run responsive --prefix e2e` opens every page at five widths from 320 to 1440 px and flags sideways scrolling and tap targets under 24 px. `npm run themes --prefix e2e` visits every page of the local portals in dark and light, on desktop and phone, saves a screenshot of each and fails on unreadable text, white form controls or sideways scrolling (444 screens, including the chat answers, none flagged).
+The browser suite in [`e2e/`](e2e) drives real Chrome through every feature (sign-in per role, CRUD, accounts, CSV, notifications and email, QR cards, scanning a photo of a QR, label sheets, clickable rows, sorting, board and calendar views, search palette, comments, subtasks, duplicate, dialogs on desktop and mobile, and a sweep for `[object Object]`). `npm run live --prefix e2e` runs a read-only pass over the three live sites (36 steps, every demo role). `npm run responsive --prefix e2e` opens every page at five widths from 320 to 1440 px and flags sideways scrolling and tap targets under 24 px. `npm run themes --prefix e2e` visits every page of the local portals in dark and light, on desktop and phone, saves a screenshot of each and fails on unreadable text, white form controls or sideways scrolling (about 490 screens, including the chat answers, the tour and the offline banner, none flagged).
 
 The tests include 33 property-based correctness properties (`fast-check`), each linked to spec requirements. See [docs/KIRO_USAGE.md](docs/KIRO_USAGE.md).
 

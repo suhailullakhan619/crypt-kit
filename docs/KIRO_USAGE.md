@@ -1,63 +1,103 @@
 # How We Used Kiro: Crypt Kit (Kiroween 2026, Skeleton Crew)
 
-> This is a working draft of the Devpost write-up. Fill in each section from real experience as you build. The `kiro-usage-journal` hook appends to the build journal at the bottom.
+> **Read this before submitting.** Every claim below is either visible in this repository or describes work done in the Kiro IDE chat. Spots marked `TODO(owner)` in the source of this file are things only you can say (what you ran in Kiro and what it did for you). Fill them in or delete the sentence around them; do not leave a claim you cannot stand behind. The remaining owner tasks are in [SUBMISSION_CHECKLIST.md](SUBMISSION_CHECKLIST.md).
 >
-> **Disclosure (keep this in the submission):** the specs, steering docs and hooks were written for Kiro. The code was then implemented task by task with Claude Code, following `tasks.md` the way Kiro executes specs: `[-]` while a task is in progress, `[x]` when done, tests at every checkpoint. The two apps were built in parallel by two Claude Code subagents, one per spec. Sections below marked _(fill in)_ should describe your own Kiro runs. Only claim Kiro features (hooks firing, MCP, Crew) that you actually used in Kiro.
+> **Disclosure (keep this in the submission):** the specs, steering docs and hooks were written for Kiro. The first release of the code was then implemented task by task with Claude Code, following `tasks.md` the way Kiro executes specs: `[-]` while a task is in progress, `[x]` when done, tests at every checkpoint. The two apps were built in parallel by two Claude Code subagents, one per spec. Everything listed under [After the first release](#after-the-first-release-built-in-the-kiro-ide) was done in the Kiro IDE agent chat.
 >
 > Detailed journals: [skeleton (below)](#build-journal) · [Lab Ledger](journal-lab-ledger.md) · [Pantry Ghost](journal-pantry-ghost.md)
 
+<!-- TODO(owner): if you ran any of the spec tasks, hooks or MCP servers yourself in Kiro, say so in one line here and keep the disclosure above accurate. -->
+
 ## Results at a glance
 
-| | Server tests | Client tests | Smoke (HTTP) | Core drift |
-|---|---|---|---|---|
-| Skeleton | 76 | 35 | 31/31 | — |
-| Lab Ledger | 125 (74 core + 51 app) | 47 | 40/40 | identical |
-| Pantry Ghost | 142 (74 core + 68 app) | 43 | 30/30 | identical |
-| Summon script | 5 (`node:test`) | | | `npm run check:core` ✔ |
+| | Server tests | Client tests | Smoke (HTTP) | Real-browser steps | Core drift |
+|---|---|---|---|---|---|
+| Crypt Kit (skeleton) | 309 | 200 | 31/31 | 72 | — |
+| Lab Ledger | 363 | 206 | 40/40 | 60 | identical |
+| Pantry Ghost | 376 | 200 | 30/30 | 51 | identical |
 
-The core, server middleware, generic UI components, the shared Jest config and the core test fixtures are byte-identical in all three apps: 31 files, checked by hash.
+Also run on all three: an installability check on the production build (8 steps each), a dark and light audit of every page (about 130 to 160 screens each), a five-width responsive audit (about 100 screens each) and a read-only check of the live sites (36 steps). Summon script: 5 tests (`node:test`).
+
+The core, server middleware, generic UI components, the shared Jest config and the core test fixtures are byte-identical in all three apps: 47 files, checked by hash (`npm run check:core`).
 
 ## Kiro surfaces used
-- **Kiro IDE:** _which parts (spec execution, hooks, chat)_
-- **Kiro CLI / Web / Crew:** _if tried: how they differed; whether Crew agents ran the skeleton and app specs in parallel_
+
+- **Kiro IDE (agent chat):** all work in [After the first release](#after-the-first-release-built-in-the-kiro-ide).
+- **Specs:** four, in `.kiro/specs/` (see below).
+- **Steering, hooks, MCP:** configured in `.kiro/` (see below).
+- **Sub-agents:** used for parallel feature work (see below).
+- **Kiro CLI / Web / Crew:** not used for this project. <!-- TODO(owner): change this line only if you did use them. -->
 
 ## Spec-driven development
-- Three specs: `crypt-kit-skeleton`, `lab-ledger` and `pantry-ghost`. The app specs reference skeleton requirements and add **Extension Points** (skeleton Req 16) whenever an app needed something Core lacked, instead of patching Core.
-- Every task links back to acceptance criteria (`_Requirements: x.y_`). The `spec-trace` hook audits for gaps.
-- Each spec has a task dependency graph, so independent waves could run in parallel.
-- _Compare with vibe coding: what the spec prevented (e.g. the prototype's error handler turned every service 404 into a 500, which skeleton Property 11 now guards)._
+
+- Four specs: `crypt-kit-skeleton` (85 tasks), `lab-ledger` (35), `pantry-ghost` (37) and `field-ready` (the installable app, the tour and the assistant check). The app specs reference skeleton requirements and add **Extension Points** (skeleton Req 16) whenever an app needed something Core lacked, instead of patching Core.
+- Every task links back to acceptance criteria (`_Requirements: x.y_`). The `spec-trace` hook audits for gaps. Each spec has a task dependency graph, so independent waves can run in parallel.
+- `field-ready` was written first, then built, in the Kiro IDE. Its acceptance criteria turned directly into tests. For example "the service worker never caches an API request" became a test that loads `sw.js` into a fake worker scope and fires fetch events at it; the same test file found that the build stamp only replaced the first of two placeholders, which would have left every deploy with the same cache name.
+- **Compared with vibe coding.** Two places where a written requirement changed the outcome: the prototype's error handler turned every service 404 into a 500, which skeleton Property 11 now guards; and the rule "the assistant can only read what the asker may read" was a requirement before it was code, so the query engine has one permission check that the rule-based parser and the optional model both pass through, instead of a check bolted on later.
+- <!-- TODO(owner): one honest sentence on where the spec-driven way cost you time or did not fit. -->
 
 ## Steering
-- `product.md`, `tech.md` and `structure.md` are always included. `server-conventions.md`, `client-conventions.md` and `testing.md` are file-matched.
-- _Which rule changed Kiro's output the most?_
+
+- `product.md`, `tech.md` and `structure.md` are always included (`inclusion: always`). `server-conventions.md`, `client-conventions.md` and `testing.md` load only for matching files (`fileMatch`).
+- <!-- TODO(owner): which rule changed the agent's output the most? e.g. the testing rule that every fast-check counterexample is copied into a plain unit test (several of those are kept in the suites). -->
 
 ## Agent hooks
-| Hook | Trigger | What it automated | What it caught |
-|---|---|---|---|
-| Run related tests on save | server file edited | `jest --findRelatedTests` | _…_ |
-| Sync skeleton core to apps | core file edited | copies Core into both apps and runs their tests | _…_ |
-| New resource checklist | resource file created | validates the definition, seeds data, updates the README | _…_ |
-| Accessibility & theme check | `.jsx` edited | aria labels, tokens, 375px layout | _…_ |
-| Spec traceability audit | manual | finds uncovered criteria and properties | _…_ |
-| Update Kiro usage write-up | manual | appends to this file | _…_ |
+
+Six hooks in `.kiro/hooks/`, all enabled:
+
+| Hook | Trigger | What it does |
+|---|---|---|
+| Run related tests on save | a server source file is edited | runs `jest --findRelatedTests` for that file in its app and fixes the cause, not the test |
+| Sync skeleton core to apps | a Core file is edited | copies Core to both apps and runs their tests |
+| New resource checklist | a resource file is created | validates the definition, seeds data, updates the README |
+| Accessibility & theme check | a `.jsx` file is edited | aria labels, theme tokens only, 375 px layout |
+| Spec traceability audit | manual | finds acceptance criteria and properties with no task or test |
+| Update Kiro usage write-up | manual | appends to the build journal below |
+
+<!-- TODO(owner): which hooks actually fired for you, and what did one catch? Delete the "what it does" column entries for any hook you never saw run. -->
 
 ## MCP
-- **MongoDB MCP (read-only):** _inspect seeded data, verify aggregations for the dashboard and impact report_
-- **Playwright MCP:** _check 375px/1440px layouts, run the demo flow end to end_
+
+Two servers are configured in `.kiro/settings/mcp.json`: **MongoDB** (read-only) and **Playwright**.
+
+<!-- TODO(owner): what did you use them for, if anything? Note: the MongoDB entry points at mongodb://localhost:27017/crypt-kit, which only exists if you run a local MongoDB; the apps themselves use an in-memory database in demo mode. Fix or remove the entry before submitting. -->
+
+The real-browser suites in `e2e/` use `playwright-core` directly rather than the MCP server.
+
+## Sub-agents
+
+For the largest batch of features (clickable rows, sorting, board and calendar views, comments, subtasks, search, duplicate, the UI polish, and the server side for checklists, comments, search and date ranges) the work was split across four parallel sub-agents. Each got a written brief with: the files it owned (and the ones it must not touch), the API contracts the others were building against, the test commands and the rule that only the coordinator syncs changes to the other two apps. Two of the four ran out of their time limit before reporting; their changes were already on disk, so the coordinating session read the code and tests, wrote a narrower follow-up brief for the missing server tests, and verified everything itself. Nothing was merged without a green suite.
 
 ## Property-based testing
-- Skeleton: 21 properties. Lab Ledger: 6 (L1–L6). Pantry Ghost: 6 (P1–P6). Each one is a `fast-check` suite headed `// Property N:` / `// Validates: Requirements …`.
+
+- Skeleton: 21 properties. Lab Ledger: 6 (L1–L6). Pantry Ghost: 6 (P1–P6). Each is a `fast-check` suite headed `// Property N:` / `// Validates: Requirements …`.
 - **Real bug found:** Pantry Ghost P5 (intake parser round trip). A typo'd donor name ("food" → "good") made the parser stop early at the "good until" date marker. The parser now stops only at a complete marker, and the shrunk case is kept as a unit test. (`docs/journal-pantry-ghost.md`)
 - **Model-based testing:** Lab Ledger L1 uses `fc.commands` to drive request, approve (including concurrent double approval), return, reject, cancel and sweep, checking the "at most one active loan per item" invariant after every step.
   - Deliberately breaking the return rule made L1 fail at once, with the shrunk sequence `[request, approve, return(Damaged)]`.
   - Removing the availability check did *not* fail L1, because the partial unique index (the designed second guard) still blocked the double loan.
-- **Test-only counterexamples** (kept as regression tests):
-  - L5 `[["aaa"],0,"aaa"]`: the test prefixed "who has the", but "who" and "has" are not stop-words.
-  - A Mongoose `$in` cast on a Mixed path double-counted activity entries.
+- **Test-only counterexamples** (kept as regression tests): L5 `[["aaa"],0,"aaa"]`; a Mongoose `$in` cast on a Mixed path that double-counted activity entries.
 - **Guard against a known bug:** skeleton Property 11 encodes the bug from the earlier prototype (service 404s returned as 500s) and checks every 400–599 status.
+- Permission rules are tested as properties too: "a role that cannot read a resource is refused and no query runs" holds for any generated resources and roles, for the voice answers and now for the general chat questions.
+
+## After the first release (built in the Kiro IDE)
+
+Work done in Kiro IDE agent sessions after the first release, in the order it happened. Each item ships with tests; the counts are in the table at the top.
+
+- **Accounts and mail:** sign-up with approval, forgot and reset password, change password, show/hide password, sign-out confirmation, SMTP notifications (Brevo) with reserved test domains skipped.
+- **Data tools:** CSV export and import (dry run first), saved views, OpenAPI docs, QR codes with short IDs, a scan or find page (camera, photo, typed ID), label sheets, themed PDFs.
+- **Hosting:** demo mode on a persistent database guarded by name (`_demo` or `_test` only, so a real database is never opened), proxy-aware rate limits, Netlify and Render deployment, a read-only check of the live sites.
+- **List and detail UX:** clickable rows, sortable columns (case-insensitive), board and calendar views, a Mine filter, subtasks, comments, duplicate, global search (Ctrl+K), UI polish.
+- **Crypt Kit as a to-do suite:** Projects, Reminders, Goals (progress derived from milestones, not typed) and a Time log.
+- **Chat assistant:** a permission-checked query engine, a rule-based question parser (dates in the asker's timezone), lookup by ID, an overview, drafts with Confirm for commands, and an optional Bedrock fallback restricted to read-only tools (`docs/BEDROCK.md`).
+- **Quality passes:** a dark and light audit of every page, a five-width responsive audit (found a 27 px overflow on 320 px phones and tap targets under 24 px, both fixed), an installability check on the production build.
+- **Field-ready (spec first):** installable apps with their own icons, an offline shell that never caches API data, a first-run tour, an assistant check script.
+
+Bugs found by these checks and fixed, with the test that now guards each: a service-worker cache name that never changed between deploys; text sorted by byte value ("Zebra" before "apple"); a confirm card that kept the previous command's "Done" state; comment text copied into the history (so a deleted comment lived on); badge text below WCAG AA contrast in both themes; a top bar too wide for a 320 px phone.
 
 ## Kiro powers
-- _Which powers were used, and what they added_
+
+<!-- TODO(owner): none were used in this repository's build. Delete this section, or add what you used. -->
+None used.
 
 ## Build journal
 <!-- kiro-usage-journal hook appends below -->

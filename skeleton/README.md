@@ -144,10 +144,10 @@ npm run summon -- my-app "My App"
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest + fast-check, 292 tests: correctness properties, integration, accounts,
+npm test --prefix server     # Jest + fast-check, 309 tests: correctness properties, integration, accounts,
                              # email, CSV, notifications, voice, reports (jest.config.js runs the core
                              # suites against the frozen config in test/core/)
-npm test --prefix client     # Vitest, 178 tests: permission mirror property, role-based UI, accounts, QR and
+npm test --prefix client     # Vitest, 200 tests: permission mirror property, role-based UI, accounts, QR and
                              # scan, dialogs, voice states, WCAG contrast
 npm run smoke --prefix server  # boots demo mode and runs 31 HTTP checks
 ```

@@ -97,8 +97,8 @@ Demo mode starts an in-memory MongoDB replica set (transactions work) and seeds 
 ## Tests
 
 ```bash
-npm test --prefix server     # Jest, 346 tests: skeleton suites ("core" project) + Lab Ledger suites ("app" project)
-npm test --prefix client     # Vitest, 184 tests: skeleton UI tests + Lab Ledger pages, dialogs, scan, contrast
+npm test --prefix server     # Jest, 363 tests: skeleton suites ("core" project) + Lab Ledger suites ("app" project)
+npm test --prefix client     # Vitest, 206 tests: skeleton UI tests + Lab Ledger pages, dialogs, scan, contrast
 npm run smoke --prefix server   # boots demo mode and runs 40 HTTP checks (SMOKE_PORT to change the port)
 ```
 
@@ -115,13 +115,22 @@ The server runs two Jest projects. **core** runs the skeleton's suites unchanged
 
 ## Screenshots
 
-_Captured from a real browser run (Chrome, demo data), in [`docs/screenshots/`](../docs/screenshots)._
+_Captured from the running app with `node e2e/screenshots.mjs` (Chrome, demo data), in [`docs/screenshots/`](../docs/screenshots)._
 
-- `lab-dashboard.png` — dashboard with the *Out right now* panel
-- `lab-scan-mobile.png` — scan result card at 375 px
-- `lab-voice.png` — “who has the oscilloscope?”
-- `lab-reservations.png`, `lab-reservation-form.png` — bookings list and the date-time booking form
-- `lab-insights.png` — most and least used equipment, late borrowers
-- `lab-import.png` — CSV import check before anything is written
-- `lab-saved-views.png` — saved filter chips on a list
-- `lab-email-snackbar.png` — notifications panel with *Email me a test*
+![Dashboard: what is out right now, what is overdue](../docs/screenshots/lab-dashboard.png)
+*Dashboard: what is out right now, what is overdue*
+
+![An item with its QR label, status moves and comments](../docs/screenshots/lab-detail.png)
+*An item with its QR label, status moves and comments*
+
+![Checkouts on a board, by status](../docs/screenshots/lab-board.png)
+*Checkouts on a board, by status*
+
+![The assistant answering from the records, with links](../docs/screenshots/lab-chat.png)
+*The assistant answering from the records, with links*
+
+![Search everything (Ctrl+K), in the light theme](../docs/screenshots/lab-search-light.png)
+*Search everything (Ctrl+K), in the light theme*
+
+![The same list on a phone](../docs/screenshots/lab-phone-list.png)
+*The same list on a phone*

@@ -78,8 +78,8 @@ The first run downloads a MongoDB binary (about 600 MB, cached in `server/node_m
 ## Tests
 
 ```bash
-npm test --prefix server                    # Jest, 359 tests: skeleton suites + Pantry Ghost properties P1–P6, integration
-npm test --prefix client                    # Vitest, 178 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
+npm test --prefix server                    # Jest, 376 tests: skeleton suites + Pantry Ghost properties P1–P6, integration
+npm test --prefix client                    # Vitest, 200 tests: lantern contrast, intake drafts, FEFO stepper, voice confirm card, scan
 npm run smoke --prefix server               # boots demo mode and walks the demo path over HTTP (30 checks)
 ```
 
@@ -113,11 +113,22 @@ The core (`server/src/core`, `server/src/middleware`, `server/test/core`, `serve
 
 ## Screenshots
 
-_Captured from a real browser run (Chrome, demo data), in [`docs/screenshots/`](../docs/screenshots)._
+_Captured from the running app with `node e2e/screenshots.mjs` (Chrome, demo data), in [`docs/screenshots/`](../docs/screenshots)._
 
-- `docs/screenshots/pantry-dashboard.png`: Use first board and This month
-- `docs/screenshots/pantry-intake.png`: voice intake drafts with a missing field highlighted
-- `docs/screenshots/pantry-distribute.png`: FEFO pick list grouped by location
-- `docs/screenshots/pantry-impact.png`: impact report preview and PDF
-- `docs/screenshots/pantry-insights.png`, `pantry-insights-mobile.png`: low stock and waste by donor
-- `docs/screenshots/pantry-donor-receipt.png`: donor receipt preview
+![Dashboard: what to use first, and this month at a glance](../docs/screenshots/pantry-dashboard.png)
+*Dashboard: what to use first, and this month at a glance*
+
+![A stock lot with its QR label](../docs/screenshots/pantry-detail.png)
+*A stock lot with its QR label*
+
+![Stock on a board, by expiry status](../docs/screenshots/pantry-board.png)
+*Stock on a board, by expiry status*
+
+![Asking in plain words](../docs/screenshots/pantry-chat.png)
+*Asking in plain words*
+
+![A list in the light theme](../docs/screenshots/pantry-list-light.png)
+*A list in the light theme*
+
+![The same list on a phone](../docs/screenshots/pantry-phone-list.png)
+*The same list on a phone*

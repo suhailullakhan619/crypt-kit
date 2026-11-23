@@ -8,7 +8,9 @@
     "test": "node features.mjs",
     "live": "node live.mjs",
     "themes": "node themes.mjs",
-    "responsive": "node responsive.mjs"
+    "responsive": "node responsive.mjs",
+    "pwa": "node pwa.mjs",
+    "screenshots": "node screenshots.mjs"
   },
   "dependencies": {
     "playwright-core": "^1.49.0"
