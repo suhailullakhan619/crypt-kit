@@ -21,6 +21,8 @@ async function fakeRepo() {
   await writeFile(s('server/package.json'), '{ "name": "crypt-kit-server" }');
   await writeFile(s('client/package.json'), '{ "name": "crypt-kit-client" }');
   await writeFile(s('client/index.html'), '<title>Crypt Kit</title>');
+  await mkdir(s('client/public'), { recursive: true });
+  await writeFile(s('client/public/manifest.webmanifest'), JSON.stringify({ name: 'Crypt Kit', short_name: 'Crypt Kit', start_url: '/', icons: [] }));
   await writeFile(s('server/src/core/registry.js'), '// core');
   await writeFile(s('server/.env'), 'SECRET=1');
   await writeFile(s('server/.env.example'), 'SECRET=');
@@ -40,6 +42,11 @@ test('copies the skeleton, applies the name, and skips excluded files', async ()
     assert.match(await readFile(t('server/package.json'), 'utf8'), /"lab-ledger-server"/);
     assert.match(await readFile(t('client/package.json'), 'utf8'), /"lab-ledger-client"/);
     assert.match(await readFile(t('client/index.html'), 'utf8'), /<title>Lab Ledger<\/title>/);
+    // the installable-app manifest is renamed too (a long name is shortened for the home screen)
+    const manifest = JSON.parse(await readFile(t('client/public/manifest.webmanifest'), 'utf8'));
+    assert.equal(manifest.name, 'Lab Ledger');
+    assert.equal(manifest.short_name, 'Lab Ledger');
+    assert.equal(manifest.start_url, '/');
     assert.equal(await readFile(t('server/src/core/registry.js'), 'utf8'), '// core');
     assert.ok(await exists(t('server/.env.example')));
     assert.ok(await exists(t('server/uploads/reports/.gitkeep')));

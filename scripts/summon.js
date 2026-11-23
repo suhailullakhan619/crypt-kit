@@ -78,6 +78,13 @@ export async function summon(slug, { root = ROOT, title, log = console.log } = {
   await rewrite(path.join(target, 'server/package.json'), (s) => s.replace(/"name":\s*"[^"]*"/, `"name": "${slug}-server"`));
   await rewrite(path.join(target, 'client/package.json'), (s) => s.replace(/"name":\s*"[^"]*"/, `"name": "${slug}-client"`));
   await rewrite(path.join(target, 'client/index.html'), (s) => s.replace(/<title>[^<]*<\/title>/, `<title>${appName}</title>`));
+  // the installable-app manifest carries the name too; run `node scripts/make-icons.mjs <name>` to redraw the icons from your logo
+  await rewrite(path.join(target, 'client/public/manifest.webmanifest'), (s) => {
+    const m = JSON.parse(s);
+    m.name = appName;
+    m.short_name = appName.length > 12 ? appName.slice(0, 12).trim() : appName;
+    return `${JSON.stringify(m, null, 2)}\n`;
+  });
 
   log(`🪦 Summoned "${appName}" into ./${slug}`);
   log(`   Next: npm install --prefix ${slug}/server && npm install --prefix ${slug}/client`);

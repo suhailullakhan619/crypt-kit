@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { LogOut, Menu, Search } from 'lucide-react';
@@ -12,6 +12,9 @@ import { Logo } from '../spooky';
 import { NotificationBell } from './NotificationBell';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { CommandPalette, useCommandShortcut } from './CommandPalette';
+import { OfflineBanner } from './OfflineBanner';
+import { Tour } from './Tour';
+import { shouldAutoOpen, tourKey } from '../../lib/tour';
 
 function Topbar({ onMenu, onSearch }) {
   const { logout } = useAuth();
@@ -69,7 +72,21 @@ function Topbar({ onMenu, onSearch }) {
 function Shell() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const { user } = useAuth();
   useCommandShortcut(setSearchOpen);
+  // First visit: open the tour once. Never in development, tests or automated browsers; ?tour=1 forces it.
+  useEffect(() => {
+    if (!user) return;
+    let seen = false;
+    try { seen = !!localStorage.getItem(tourKey(user.userId)); } catch { /* storage blocked: treat as unseen */ }
+    const forced = new URLSearchParams(window.location.search).get('tour') === '1';
+    if (shouldAutoOpen({ seen, prod: import.meta.env.PROD, webdriver: navigator.webdriver, forced })) setTourOpen(true);
+  }, [user?.userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const finishTour = () => {
+    setTourOpen(false);
+    try { localStorage.setItem(tourKey(user?.userId), '1'); } catch { /* ignore */ }
+  };
   return (
     <div className="fog flex min-h-dvh">
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r bg-sidebar md:block">
@@ -82,11 +99,13 @@ function Shell() {
       </Sheet>
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenu={() => setOpen(true)} onSearch={() => setSearchOpen(true)} />
+        <OfflineBanner />
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8 md:py-8">
           <Outlet />
         </main>
       </div>
-      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} onTour={() => setTourOpen(true)} />
+      <Tour open={tourOpen} onFinish={finishTour} />
     </div>
   );
 }

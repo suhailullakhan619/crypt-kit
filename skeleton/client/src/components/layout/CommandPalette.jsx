@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CornerDownLeft, FileText, LayoutDashboard, Mic, Plus, Search, Users } from 'lucide-react';
+import { Compass, CornerDownLeft, FileText, LayoutDashboard, Mic, Plus, Search, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
 import { ResourceIcon } from '../spooky';
 import { useApi } from '../../hooks/useApi';
@@ -67,9 +67,9 @@ function useStaticEntries() {
  * Command palette dialog: record search (debounced, /api/search) plus quick navigation and "create"
  * shortcuts. Combobox pattern: the input keeps focus, arrows move `aria-activedescendant`.
  *
- * @param {{ open: boolean, onOpenChange: (open: boolean) => void }} props
+ * @param {{ open: boolean, onOpenChange: (open: boolean) => void, onTour?: () => void }} props
  */
-export function CommandPalette({ open, onOpenChange }) {
+export function CommandPalette({ open, onOpenChange, onTour }) {
   const api = useApi();
   const navigate = useNavigate();
   const { nav, create } = useStaticEntries();
@@ -105,14 +105,22 @@ export function CommandPalette({ open, onOpenChange }) {
     const creates = create.filter(match);
     if (pages.length) out.push({ id: 'pages', label: 'Go to', entries: pages });
     if (creates.length) out.push({ id: 'create', label: 'Create', entries: creates });
+    // only offered once the user types something that asks for it, so the default list stays short
+    if (onTour && q.length >= 2 && ['take the tour', 'tour', 'help', 'welcome', 'intro'].some((w) => w.includes(q))) {
+      out.push({ id: 'help', label: 'Help', entries: [{ id: 'help:tour', label: 'Take the tour', action: 'tour', icon: <Compass className="h-4 w-4" aria-hidden /> }] });
+    }
     return out;
-  }, [query, debounced, searching, search.data, nav, create]);
+  }, [query, debounced, searching, search.data, nav, create, onTour]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.entries), [groups]);
   useEffect(() => { setActive(0); }, [flat.length, query]);
   useEffect(() => { document.getElementById(`cmdk-opt-${active}`)?.scrollIntoView?.({ block: 'nearest' }); }, [active]);
 
-  const go = (entry) => { onOpenChange(false); navigate(entry.to); };
+  const go = (entry) => {
+    onOpenChange(false);
+    if (entry.action === 'tour') { setTimeout(() => onTour?.(), 150); return; } // after this dialog has closed
+    navigate(entry.to);
+  };
   const onKeyDown = (e) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => (flat.length ? (a + 1) % flat.length : 0)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => (flat.length ? (a - 1 + flat.length) % flat.length : 0)); }

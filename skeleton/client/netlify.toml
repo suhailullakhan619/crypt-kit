@@ -13,3 +13,14 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# The service worker and manifest must never be served from a stale cache, or a new deploy is not picked up.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"

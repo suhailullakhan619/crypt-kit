@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import './index.css';
+import { registerSW } from './lib/registerSW.js';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +17,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+registerSW();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

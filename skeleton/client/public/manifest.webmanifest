@@ -1,0 +1,41 @@
+{
+  "name": "Crypt Kit",
+  "short_name": "Crypt Kit",
+  "description": "Crypt Kit — a spec-driven skeleton for role-secured internal tools",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#110e15",
+  "theme_color": "#110e15",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan or find",
+      "url": "/scan"
+    },
+    {
+      "name": "Ask the assistant",
+      "url": "/voice"
+    }
+  ]
+}
