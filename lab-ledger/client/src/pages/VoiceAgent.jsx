@@ -123,8 +123,8 @@ export default function VoiceAgent() {
           </Button>
         </form>
 
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" checked={readAloud} onChange={(e) => toggleReadAloud(e.target.checked)} />
+        <label className="flex min-h-6 items-center gap-2 text-xs text-muted-foreground">
+          <input type="checkbox" className="h-6 w-6 accent-[hsl(var(--primary))]" checked={readAloud} onChange={(e) => toggleReadAloud(e.target.checked)} />
           Read answers aloud
         </label>
         {ex?.examples?.length > 0 && (
