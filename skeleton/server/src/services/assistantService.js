@@ -119,6 +119,59 @@ async function runTool(name, input, ctx) {
   return { error: `unknown tool ${name}` };
 }
 
+/**
+ * Turns an AWS error into what the owner should do about it. Pure, so it is unit tested.
+ * @param {{ name?: string, message?: string, $metadata?: { httpStatusCode?: number } }} err
+ * @returns {{ title: string, action: string }}
+ */
+export function explainAwsError(err) {
+  const name = String(err?.name ?? '');
+  const msg = String(err?.message ?? '');
+  const has = (re) => re.test(name) || re.test(msg);
+  if (has(/could not load credentials|CredentialsProviderError|no credentials/i)) {
+    return { title: 'No AWS credentials found', action: 'Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (and AWS_SESSION_TOKEN for temporary keys) in server/.env, or in the host\'s environment settings. Do not commit them.' };
+  }
+  if (has(/ExpiredToken|security token.*expired|token.*expired/i)) {
+    return { title: 'The AWS credentials have expired', action: 'Temporary keys stop working after a while. Create fresh keys (or use an IAM user\'s long-lived access key) and update them.' };
+  }
+  if (has(/UnrecognizedClient|InvalidSignature|InvalidClientTokenId|SignatureDoesNotMatch|security token included in the request is invalid/i)) {
+    return { title: 'AWS rejected the credentials', action: 'The access key or secret is wrong (a stray space or quote is common). Re-copy both values, and check AWS_REGION is a real region.' };
+  }
+  if (has(/on-demand throughput isn.?t supported|inference profile/i)) {
+    return { title: 'This model needs an inference profile ID', action: 'In the Bedrock console open Inference profiles, copy the ID for your model (it starts with us., eu. or apac.), and use that as BEDROCK_MODEL_ID.' };
+  }
+  if (has(/AccessDenied/i) && has(/bedrock:InvokeModel|not authorized to perform/i)) {
+    return { title: 'The IAM user may not call Bedrock', action: 'Attach a policy allowing bedrock:InvokeModel on the model (see docs/BEDROCK.md for the smallest one).' };
+  }
+  if (has(/AccessDenied|don.?t have access to the model|access to this model|not enabled|model access/i)) {
+    return { title: 'Model access has not been granted', action: 'In the Bedrock console open Model access (in the same region as AWS_REGION), request the model, and wait for it to show Access granted. Some models need a short use-case form.' };
+  }
+  if (has(/ResourceNotFound|model identifier is invalid|ValidationException.*model|not supported in this region|could not resolve the foundation model/i)) {
+    return { title: 'Bedrock cannot find that model here', action: 'Check BEDROCK_MODEL_ID for typos, and that the model is offered in AWS_REGION (model lists differ by region).' };
+  }
+  if (has(/Throttling|TooManyRequests|rate exceeded|quota/i)) {
+    return { title: 'Bedrock is rate limiting this account', action: 'Wait a minute and retry. New accounts have low default quotas; request an increase in Service Quotas if it persists.' };
+  }
+  if (has(/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|getaddrinfo/i)) {
+    return { title: 'Could not reach AWS', action: 'Check the network connection, a proxy or firewall, and that AWS_REGION is correct.' };
+  }
+  return { title: 'Bedrock returned an error', action: `${name || 'Error'}: ${msg.slice(0, 200)}` };
+}
+
+/**
+ * One tiny model call that proves the model ID, region and credentials work together.
+ * @param {{ modelId: string, region: string }} cfg
+ * @returns {Promise<string>} the model's reply
+ */
+export async function pingModel(cfg) {
+  const out = await converse({
+    modelId: cfg.modelId,
+    messages: [{ role: 'user', content: [{ text: 'Reply with the single word: ready' }] }],
+    inferenceConfig: { maxTokens: 20, temperature: 0 },
+  }, cfg);
+  return (out?.output?.message?.content ?? []).map((c) => c.text ?? '').join(' ').trim();
+}
+
 /** True when the optional assistant is configured. */
 export const assistantEnabled = (env) => !!env?.ASSISTANT;
 

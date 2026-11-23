@@ -1,7 +1,7 @@
 {
   "name": "lab-ledger-server",
   "version": "0.1.0",
-  "description": "Lab Ledger API — Crypt Kit skeleton + lab equipment checkout, calibration and QR labels",
+  "description": "Lab Ledger API â€” Crypt Kit skeleton + lab equipment checkout, calibration and QR labels",
   "type": "module",
   "main": "src/server.js",
   "license": "MIT",
@@ -14,6 +14,7 @@
     "seed": "node src/seed/cli.js",
     "smoke": "node scripts/smoke.js",
     "mail:test": "node scripts/mail-test.js",
+    "assistant:test": "node scripts/assistant-test.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
