@@ -33,7 +33,7 @@ vi.mock('../api/resources', () => ({
 vi.mock('../api/voice', () => ({
   examples: vi.fn(async () => ({ provider: 'browser', examples: ['how many notes are there'] })),
   ask: vi.fn(async () => { const e = new Error('boom'); e.response = { data: { error: 'The spirits are unavailable' } }; throw e; }),
-  query: vi.fn(),
+  speakAudio: vi.fn(),
 }));
 
 beforeEach(() => localStorage.clear());

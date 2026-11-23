@@ -1,5 +1,8 @@
 # Requirements Document
 
+> **Change note (Kiroween 2026, voice):** the Amazon Bedrock assistant and the OpenAI voice provider were removed. Chat answers come from the built-in rule-based query engine only. Spoken answers use Amazon Polly (`VOICE_PROVIDER=polly`, `POST /api/voice/speak`) with an automatic fallback to the browser voice. Requirements below that mention Bedrock or OpenAI describe the earlier design.
+
+
 ## Introduction
 
 Crypt Kit is a lean, reusable full-stack skeleton for internal tools. It lives in `/skeleton` and has a React client (`/skeleton/client`) and an Express.js server (`/skeleton/server`) backed by MongoDB.

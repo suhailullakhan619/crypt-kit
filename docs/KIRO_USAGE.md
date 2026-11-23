@@ -12,9 +12,9 @@
 
 | | Server tests | Client tests | Smoke (HTTP) | Real-browser steps | Core drift |
 |---|---|---|---|---|---|
-| Crypt Kit (skeleton) | 309 | 200 | 31/31 | 72 | — |
-| Lab Ledger | 363 | 206 | 40/40 | 60 | identical |
-| Pantry Ghost | 376 | 200 | 30/30 | 51 | identical |
+| Crypt Kit (skeleton) | 300 | 205 | 31/31 | 72 | — |
+| Lab Ledger | 354 | 211 | 40/40 | 60 | identical |
+| Pantry Ghost | 367 | 205 | 30/30 | 51 | identical |
 
 Also run on all three: an installability check on the production build (8 steps each), a dark and light audit of every page (about 130 to 160 screens each), a five-width responsive audit (about 100 screens each) and a read-only check of the live sites (36 steps). Summon script: 5 tests (`node:test`).
 
@@ -88,7 +88,7 @@ Work done in Kiro IDE agent sessions after the first release, in the order it ha
 - **Hosting:** demo mode on a persistent database guarded by name (`_demo` or `_test` only, so a real database is never opened), proxy-aware rate limits, Netlify and Render deployment, a read-only check of the live sites.
 - **List and detail UX:** clickable rows, sortable columns (case-insensitive), board and calendar views, a Mine filter, subtasks, comments, duplicate, global search (Ctrl+K), UI polish.
 - **Crypt Kit as a to-do suite:** Projects, Reminders, Goals (progress derived from milestones, not typed) and a Time log.
-- **Chat assistant:** a permission-checked query engine, a rule-based question parser (dates in the asker's timezone), lookup by ID, an overview, drafts with Confirm for commands, and an optional Bedrock fallback restricted to read-only tools (`docs/BEDROCK.md`).
+- **Chat assistant:** a permission-checked query engine, a rule-based question parser (dates in the asker's timezone), lookup by ID, an overview, drafts with Confirm for commands, and spoken answers through the browser voice or, when switched on, Amazon Polly (`docs/POLLY.md`).
 - **Quality passes:** a dark and light audit of every page, a five-width responsive audit (found a 27 px overflow on 320 px phones and tap targets under 24 px, both fixed), an installability check on the production build.
 - **Field-ready (spec first):** installable apps with their own icons, an offline shell that never caches API data, a first-run tour, an assistant check script.
 
@@ -110,8 +110,8 @@ None used.
 - Still pending: the `jobs/app` loader (part of 6.4), which arrives with the sweeper in task 8.
 
 ### 2026-11-05: skeleton server, tasks 8–12 (Claude Code, following the Kiro task list)
-- Tasks 8–11: the overdue sweeper and job loader (finishing 6.4), PDF reports (`PdfBuilder` with table, kv, heading and barChart helpers for custom reports), and the voice backend: an intent registry, built-in intents for every resource, OpenAI speech behind a lazy client, and a browser fallback. Also the seed, with per-resource data files and generic placeholders for resources that have none.
-- Checkpoint 12: 67 Jest tests (16 suites) and 32 HTTP smoke checks pass with no `OPENAI_API_KEY`.
+- Tasks 8–11: the overdue sweeper and job loader (finishing 6.4), PDF reports (`PdfBuilder` with table, kv, heading and barChart helpers for custom reports), and the voice backend: an intent registry, built-in intents for every resource, a speech wrapper (OpenAI at the time, replaced by Amazon Polly with a browser-voice fallback). Also the seed, with per-resource data files and generic placeholders for resources that have none.
+- Checkpoint 12: 67 Jest tests (16 suites) and 32 HTTP smoke checks pass with no speech keys.
 - Properties 12, 14, 16 and 17 were added. The only failure was a wrong regex in a test assertion, not a code bug.
 - UX gap found at the checkpoint: the generated voice example "how many notes are low" read badly. Built-in intents now accept field-named phrasings ("how many high priority notes"), and Property 14's generator now covers them.
 
@@ -120,7 +120,7 @@ None used.
 - A visual check found that equal-weight columns broke codes like `WO-1201`. Widths are now measured from the text, so each column fits its longest word and dates and durations stay on one line.
 
 ### 2026-11-05: skeleton client, tasks 13–15 (Claude Code, following the Kiro task list)
-- React + Vite + Tailwind client with token-based "Crypt" theming (dark by default, light toggle, reduced-motion support). Everything is driven by `/api/meta`: sidebar, list/filters/search, create/edit forms, detail page with status-transition buttons, activity timeline, reports page, voice agent (OpenAI recorder, browser speech, typed fallback) and Superuser user management.
+- React + Vite + Tailwind client with token-based "Crypt" theming (dark by default, light toggle, reduced-motion support). Everything is driven by `/api/meta`: sidebar, list/filters/search, create/edit forms, detail page with status-transition buttons, activity timeline, reports page, voice agent (browser speech or Amazon Polly, typed fallback) and Superuser user management.
 - Tests: Property 15 (client `can` vs server `can`, 500 runs), UI tests for the route guard, Viewer hiding, Member partial access and voice error display, plus 24 automated WCAG AA contrast checks over the theme tokens (all pass).
 - The checkpoint 15 browser walkthrough at 1440px and 375px found and fixed 5 bugs:
   1. `/users` redirected away on a direct visit, because the Superuser check ran before meta loaded.

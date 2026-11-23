@@ -29,17 +29,24 @@ describe('loadEnv', () => {
     expect(a.MONGODB_URI).toBeNull();
   });
 
-  test('VOICE_PROVIDER defaults from OPENAI_API_KEY', () => {
-    expect(loadEnv({ DEMO_MODE: 'true' }).VOICE_PROVIDER).toBe('browser');
-    expect(loadEnv({ DEMO_MODE: 'true', OPENAI_API_KEY: 'sk-test' }).VOICE_PROVIDER).toBe('openai');
-    expect(loadEnv({ DEMO_MODE: 'true', OPENAI_API_KEY: 'sk-test', VOICE_PROVIDER: 'browser' }).VOICE_PROVIDER).toBe('browser');
+  test('VOICE_PROVIDER defaults to the browser voice and has no Polly settings', () => {
+    const env = loadEnv({ DEMO_MODE: 'true' });
+    expect(env.VOICE_PROVIDER).toBe('browser');
+    expect(env.POLLY).toBeNull();
   });
-
-  test('VOICE_PROVIDER=openai without a key, or an unknown provider, is rejected', () => {
-    expect(() => loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'openai' })).toThrow(/OPENAI_API_KEY/);
+  test('VOICE_PROVIDER=polly reads voice, engine and region, with defaults', () => {
+    expect(loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'polly' }).POLLY).toEqual({ voiceId: 'Joanna', engine: 'neural', region: 'us-east-1' });
+    expect(loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'Polly', POLLY_VOICE_ID: 'Matthew', POLLY_ENGINE: 'Standard', AWS_REGION: 'eu-west-2' }).POLLY)
+      .toEqual({ voiceId: 'Matthew', engine: 'standard', region: 'eu-west-2' });
+    expect(loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'polly', AWS_REGION: 'eu-west-2', POLLY_REGION: 'us-west-2' }).POLLY.region).toBe('us-west-2');
+  });
+  test('unknown providers and bad Polly settings are rejected', () => {
     expect(() => loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'carrier-pigeon' })).toThrow(/VOICE_PROVIDER/);
+    expect(() => loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'openai' })).toThrow(/VOICE_PROVIDER/);
+    expect(() => loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'polly', POLLY_ENGINE: 'loud' })).toThrow(/POLLY_ENGINE/);
+    expect(() => loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'polly', POLLY_VOICE_ID: 'Jo anna!' })).toThrow(/POLLY_VOICE_ID/);
+    expect(() => loadEnv({ DEMO_MODE: 'true', VOICE_PROVIDER: 'polly', POLLY_REGION: 'mars' })).toThrow(/POLLY_REGION/);
   });
-
   test('invalid PORT is rejected', () => {
     expect(() => loadEnv({ DEMO_MODE: 'true', PORT: 'abc' })).toThrow(/PORT/);
     expect(() => loadEnv({ DEMO_MODE: 'true', PORT: '70000' })).toThrow(/PORT/);

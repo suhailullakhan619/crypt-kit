@@ -6,7 +6,7 @@ import { useMeta } from '../context/MetaContext';
 import { formatDate } from '../lib/format';
 
 /**
- * Rich answer for the chat assistant (intents QUERY, OVERVIEW, LOOKUP and ASSISTANT): the records it
+ * Rich answer for the chat assistant (intents QUERY, OVERVIEW and LOOKUP): the records it
  * found as links to their pages, per-resource counts for overviews, and the details of a looked-up item.
  */
 const recordHref = (key, id) => `/r/${key}/${id}`;

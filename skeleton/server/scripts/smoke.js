@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 const PORT = Number(process.env.SMOKE_PORT ?? 5055);
 const base = `http://localhost:${PORT}/api`;
 const child = spawn(process.execPath, ['src/server.js'], {
-  env: { ...process.env, DEMO_MODE: 'true', PORT: String(PORT), OPENAI_API_KEY: '', VOICE_PROVIDER: '' },
+  env: { ...process.env, DEMO_MODE: 'true', PORT: String(PORT), VOICE_PROVIDER: '' },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 

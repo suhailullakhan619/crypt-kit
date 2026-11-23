@@ -10,9 +10,9 @@ Everything in the repository is done and tested. These items need you, because t
 - [ ] Decide the **Kiro Crew** bonus: only if you actually built a separate Crew app and have its repo. Otherwise ignore it.
 - [ ] `.kiro/settings/mcp.json` points the MongoDB MCP server at `mongodb://localhost:27017/crypt-kit`, which does not exist on a machine without a local MongoDB. Either start one, change it, or remove that entry, so a judge who opens the config is not misled.
 
-## 2. Turn on the AI assistant (optional, 20 minutes)
+## 2. Turn on Amazon Polly voices (optional, 15 minutes)
 
-Follow `docs/BEDROCK.md`. Do it locally first with `npm run assistant:test --prefix skeleton/server`; when it prints "All good", add the same four variables on the three Render services and check `/api/health` says `"assistant": true`. Never paste the keys into chat or commit them.
+Follow `docs/POLLY.md`. Do it locally first with `npm run voice:test --prefix skeleton/server`; when it prints "Polly answered", add `VOICE_PROVIDER=polly`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` on the three Render services and check `/api/health` says `"voiceProvider": "polly"`. Never paste the keys into chat or commit them.
 
 ## 3. Record the demo video (about 90 minutes)
 

@@ -2,7 +2,6 @@ import { defineResource } from '../core/defineResource.js';
 import { buildIntents } from '../core/intentRegistry.js';
 import { runQuery, runOverview, lookupCode } from '../core/queryEngine.js';
 import { answer, examples } from './voiceService.js';
-import { setConverseForTests, specFromTool } from './assistantService.js';
 import { startDb, makeActor } from '../../test/db.js';
 import '../models/ActivityLog.js';
 import config from '../../crypt.config.js';
@@ -90,7 +89,6 @@ beforeAll(async () => {
   await vault.model.create([{ name: 'Crown jewels' }]);
 });
 afterAll(() => db.stop());
-afterEach(() => { setConverseForTests(null); delete ctx.env.ASSISTANT; });
 
 describe('query engine', () => {
   test('filters by value, excludes, and never returns soft-deleted records', async () => {
@@ -229,100 +227,3 @@ describe('asking in plain words', () => {
     expect(list).toContain('what is on my plate');
   });
 });
-
-describe('optional language-model assistant', () => {
-  const FREEFORM = 'give me a rundown of the urgent stuff please';
-  const enable = () => { ctx.env.ASSISTANT = { modelId: 'test-model', region: 'us-east-1' }; };
-  const toolUse = (input, name = 'query_records') => ({ output: { message: { role: 'assistant', content: [{ toolUse: { toolUseId: 't1', name, input } }] } }, stopReason: 'tool_use' });
-  const say = (text) => ({ output: { message: { role: 'assistant', content: [{ text }] } }, stopReason: 'end_turn' });
-
-  test('is off by default: free-form questions get the normal fallback and no model is called', async () => {
-    const spy = jestFn();
-    setConverseForTests(spy);
-    expect((await ask(FREEFORM)).intent).toBe('UNKNOWN');
-    expect(spy.calls).toBe(0);
-  });
-
-  test('asks the model, runs its tool call through the permission-checked engine, and returns its words', async () => {
-    enable();
-    const seen = [];
-    setConverseForTests(async (params) => {
-      seen.push(structuredClone(params));
-      return seen.length === 1 ? toolUse({ resource: 'tasks', overdue: true }) : say('You have 2 overdue tasks, the oldest is the crystal ball polish.');
-    });
-    const r = await ask(FREEFORM);
-    expect(r).toMatchObject({ intent: 'ASSISTANT', answer: 'You have 2 overdue tasks, the oldest is the crystal ball polish.' });
-    expect(r.data.items.map((i) => i.title)).toContain('Renew broom insurance');
-    // the second call carries the tool result back to the model
-    const result = seen[1].messages.at(-1).content[0].toolResult.content[0].json;
-    expect(result).toMatchObject({ resource: 'tasks', total: 2 });
-  });
-
-  test('the model is only told about, and offered, what this user can read', async () => {
-    enable();
-    let first;
-    setConverseForTests(async (params) => { first ??= structuredClone(params); return say('ok'); });
-    await ask(FREEFORM, mina);
-    expect(first.system[0].text).toContain('tasks');
-    expect(first.system[0].text).not.toContain('vault');
-    expect(first.toolConfig.tools[0].toolSpec.inputSchema.json.properties.resource.enum).toEqual(['tasks', 'entries']);
-    expect(first.system[0].text).toContain('Today is 2026-11-19');
-  });
-
-  test('a tool call for a resource the user cannot read comes back denied, whatever the model says', async () => {
-    enable();
-    const seen = [];
-    setConverseForTests(async (params) => { seen.push(structuredClone(params)); return seen.length === 1 ? toolUse({ resource: 'vault' }) : say('I could not read that.'); });
-    await ask(FREEFORM, mina);
-    expect(seen[1].messages.at(-1).content[0].toolResult.content[0].json).toEqual({ denied: true, label: 'Vault' });
-  });
-
-  test('overview and ID lookup tools work too', async () => {
-    enable();
-    const seen = [];
-    setConverseForTests(async (params) => { seen.push(structuredClone(params)); return seen.length === 1 ? toolUse({}, 'overview') : seen.length === 2 ? toolUse({ code: 'T-0001' }, 'lookup_id') : say('done'); });
-    // the model asks for two tools in a row
-    await ask(FREEFORM);
-    expect(seen[1].messages.at(-1).content[0].toolResult.content[0].json.rows[0]).toMatchObject({ key: 'tasks', overdue: 2 });
-    expect(seen[2].messages.at(-1).content[0].toolResult.content[0].json).toMatchObject({ found: true, title: 'Buy candles' });
-  });
-
-  test('if the model fails, the user still gets the normal fallback', async () => {
-    enable();
-    setConverseForTests(async () => { throw new Error('AccessDeniedException'); });
-    const spy = jestSpy();
-    const r = await ask(FREEFORM);
-    spy.restore();
-    expect(r.intent).toBe('UNKNOWN');
-    expect(r.answer).toContain('Try something like');
-  });
-
-  test('a model that never stops calling tools is cut off', async () => {
-    enable();
-    let n = 0;
-    setConverseForTests(async () => { n += 1; return toolUse({ resource: 'tasks' }); });
-    expect((await ask(FREEFORM)).intent).toBe('UNKNOWN');
-    expect(n).toBe(4);
-  });
-
-  test('free-form questions are rate limited per user', async () => {
-    enable();
-    setConverseForTests(async () => say('fine'));
-    const flood = await makeActor(midRole, 'Flood');
-    for (let i = 0; i < 20; i++) expect((await ask(FREEFORM, flood)).intent).toBe('ASSISTANT');
-    expect((await ask(FREEFORM, flood)).answer).toContain('a lot of free-form questions');
-  });
-
-  test('tool arguments are sanitised: unknown fields, bad dates and non-integers are dropped', () => {
-    const spec = specFromTool({ resource: 'tasks', aggregate: 'drop table', filters: { priority: 'High', bad: 5 }, from: 'yesterday', to: '2026-11-30', limit: 'lots', evil: true, mine: 'yes' }, db.registry);
-    expect(spec).toMatchObject({ resource: 'tasks', aggregate: 'list', filters: { priority: 'High' } });
-    expect(spec.limit).toBeUndefined();
-    expect(spec.mine).toBeUndefined();
-    expect(spec.evil).toBeUndefined();
-    expect(spec.range.to.toISOString()).toBe('2026-12-01T00:00:00.000Z'); // "to" is inclusive of the whole day
-    expect(spec.range.from.getTime()).toBe(0);
-  });
-});
-
-function jestFn() { const f = async () => { f.calls += 1; return { output: { message: { role: 'assistant', content: [{ text: 'x' }] } } }; }; f.calls = 0; return f; }
-function jestSpy() { const orig = console.error; console.error = () => {}; return { restore: () => { console.error = orig; } }; }

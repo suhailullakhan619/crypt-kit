@@ -23,7 +23,7 @@ export const CORE_SUITES = [
   'src/services/search.test.js',
   'src/services/dateRange.test.js',
   'src/services/assistant.test.js',
-  'src/services/assistantCheck.test.js',
+  'src/services/speech.test.js',
   'src/core/queryParser.test.js',
   'src/core/when.test.js',
   'src/services/sortCollation.test.js',

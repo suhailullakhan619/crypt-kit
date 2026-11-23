@@ -73,7 +73,7 @@ npm run dev --prefix server               # API on http://localhost:5000
 npm run dev --prefix client               # app on http://localhost:5173
 ```
 
-The first run downloads a MongoDB binary (about 600 MB, cached in `server/node_modules/.cache`). Voice works in the browser through the Web Speech API. Set `OPENAI_API_KEY` to use Whisper and TTS instead. Environment variables are documented in [`server/.env.example`](server/.env.example) and the [skeleton README](../skeleton/README.md).
+The first run downloads a MongoDB binary (about 600 MB, cached in `server/node_modules/.cache`). Voice works in the browser through the Web Speech API. Set `VOICE_PROVIDER=polly` (with AWS keys) to have Amazon Polly read answers aloud instead. Environment variables are documented in [`server/.env.example`](server/.env.example) and the [skeleton README](../skeleton/README.md).
 
 ## Tests
 

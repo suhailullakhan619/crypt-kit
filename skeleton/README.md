@@ -70,10 +70,10 @@ The server validates these at start-up and stops with a message naming the varia
 | `MAIL_REPLY_TO` | — | Optional reply address |
 | `MAIL_ALLOW_TEST_DOMAINS` | `false` | Deliver to `.test` / `.example` addresses (only for a local fake mail server) |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | — | Optional owner account (superuser) created by the seed. Both email and password, password at least 8 characters |
-| `BEDROCK_MODEL_ID` | — | Optional chat assistant for free-form questions (Amazon Bedrock model or inference-profile ID). Off unless set. Needs AWS credentials with `bedrock:InvokeModel` from the usual sources (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, or a role) |
-| `AWS_REGION` | `us-east-1` | Region of that Bedrock model |
-| `OPENAI_API_KEY` | — | Optional; enables Whisper + TTS |
-| `VOICE_PROVIDER` | auto | `openai` when a key is set, otherwise `browser` (Web Speech API) |
+| `VOICE_PROVIDER` | `browser` | `polly` to read answers aloud with Amazon Polly (see `docs/POLLY.md`), otherwise the browser's own voice. The chat page falls back to the browser voice whenever Polly fails |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | � | Only for `polly`. Standard AWS credential sources work too (a role). The IAM user needs only `polly:SynthesizeSpeech` |
+| `AWS_REGION`, `POLLY_REGION` | `us-east-1` | Region used for Polly (`POLLY_REGION` wins) |
+| `POLLY_VOICE_ID`, `POLLY_ENGINE` | `Joanna`, `neural` | Polly voice, and `neural` or `standard` |
 
 App settings live in `server/crypt.config.js`: the app name, the roles (ordered highest first, where the first role is the superuser), demo users, the report organization, time zone and PDF colours (`reports.theme`), `notifyRoles` (extra roles to notify per resource) and `routineDueRules` (resources whose due rule changes status silently).
 

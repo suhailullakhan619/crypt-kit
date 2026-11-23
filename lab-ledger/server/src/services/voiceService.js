@@ -3,7 +3,6 @@ import { can } from '../core/permissions.js';
 import { parseIntent } from '../core/intentRegistry.js';
 import { exampleQuestions } from '../core/assistantIntents.js';
 import { httpError } from '../utils/httpError.js';
-import { askAssistant } from './assistantService.js';
 
 export const MAX_QUESTION_LENGTH = 500;
 
@@ -37,9 +36,6 @@ export async function answer(text, user, { now = clockNow(), tzOffset = 0 } = {}
   const tz = Number.isFinite(tzOffset) && Math.abs(tzOffset) <= 840 ? tzOffset : 0;
   const { intent, params, entry } = parseIntent(text, ctx.intents ?? []);
   if (!entry) {
-    // Nothing understood it. A language model (optional) gets a read-only try before we give up.
-    const ai = await askAssistant(text, user, { ...ctx, now, tz });
-    if (ai) return { transcript: text, intent: 'ASSISTANT', answer: ai.answer, data: ai.data };
     return { transcript: text, intent: 'UNKNOWN', answer: fallback(exampleQuestions(ctx.registry, ctx.config, user)), data: null };
   }
   if (!mayRun(entry, user, ctx, params)) {

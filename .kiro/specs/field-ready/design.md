@@ -39,13 +39,16 @@ flowchart LR
 - Seen state is `localStorage['crypt-tour:<userId>']`. Automatic opening requires production, no `navigator.webdriver` and not seen; `?tour=1` forces it.
 - `AppShell` owns the open state and passes `onTour` to the palette, which adds a "Take the tour" entry under Help.
 
-### Assistant check (Req 4)
-- `server/scripts/assistant-test.js` reads the same environment the server does (`loadEnv`), refuses to run without `BEDROCK_MODEL_ID`, sends a one-line Converse call, then runs `askAssistant` against an in-memory demo database with a question that needs a tool call. `explainAwsError(err)` is a pure function with a table of error names to advice, unit tested.
-- `routes/health.js` adds `assistant: !!env.ASSISTANT`.
-- `docs/BEDROCK.md` documents variables, the minimal IAM policy and the common errors.
+### Polly voice check (Req 4)
+
+- `server/src/services/speechService.js` wraps `@aws-sdk/client-polly` (loaded on first use, so the server starts without AWS keys) and holds `explainAwsError(err)`, a pure function with a table of error names to advice, unit tested.
+- `POST /api/voice/speak` (authenticated, 1 to 1500 characters, 30 per user per 10 minutes) returns `audio/mpeg`; it answers 400 unless `VOICE_PROVIDER=polly`, and 502 with a plain-language message when Polly fails.
+- `server/scripts/voice-test.js` reads the same environment the server does (`loadEnv`), speaks one sentence, saves the mp3 and prints the advice from `explainAwsError` on failure.
+- `VoiceAgent` plays the Polly audio and falls back to `speechSynthesis`; a "Read answers aloud" checkbox (localStorage `crypt_read_aloud`) turns speaking off.
+- `docs/POLLY.md` documents variables, the minimal IAM policy and the common errors.
 
 ## Testing strategy
-- Unit: `tour.test.js` (`buildSteps`, `shouldAutoOpen` truth table), `Tour.test.jsx` (steps, keyboard, remember, replay), `OfflineBanner.test.jsx`, `registerSW.test.js`, `assistantCheck.test.js` (`explainAwsError`, health flag).
+- Unit: `tour.test.js` (`buildSteps`, `shouldAutoOpen` truth table), `Tour.test.jsx` (steps, keyboard, remember, replay), `OfflineBanner.test.jsx`, `registerSW.test.js`, `speech.test.js` (Polly wrapper, `explainAwsError`), `voice.test.js` (endpoint), `pollyVoice.test.jsx` (playback, fallback, checkbox).
 - Build: a test runs `vite build` output check that `dist` holds the manifest, icons and a stamped `sw.js`.
 - Browser (local, production build served by `vite preview`): the manifest is valid and linked, the service worker activates, the app shell loads offline, API calls are not in the cache, the tour opens with `?tour=1` and not again after Skip.
 

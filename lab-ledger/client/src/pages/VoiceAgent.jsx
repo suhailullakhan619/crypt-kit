@@ -2,9 +2,8 @@ import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Mic, Square, Send, Volume2 } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
-import { useRecorder, canRecord } from '../hooks/useRecorder';
 import { useSpeech, canRecognise } from '../hooks/useSpeech';
-import { ask, examples as fetchExamples, query as voiceQuery } from '../api/voice';
+import { ask, examples as fetchExamples, speakAudio } from '../api/voice';
 import { PageHeader } from '../components/layout/AppShell';
 import { Card } from '../components/ui/display';
 import { Button } from '../components/ui/button';
@@ -16,6 +15,7 @@ import { errorMessage, cn } from '../lib/utils';
 const renderers = import.meta.glob('../voice/*.jsx', { eager: true });
 const rendererFor = (intent) => renderers[`../voice/${intent}.jsx`]?.default ?? null;
 
+const READ_ALOUD_KEY = 'crypt_read_aloud';
 const STATUS_TEXT = {
   idle: 'Tap the beaker and ask a question',
   listening: 'Listening… tap again when you are done',
@@ -25,26 +25,50 @@ const STATUS_TEXT = {
 };
 
 /**
- * Voice agent (Req 11.4–11.10). Providers:
- *  - openai: record with MediaRecorder → /voice/query → play audio/mpeg
- *  - browser: SpeechRecognition → /voice/ask → speechSynthesis
- *  - text: always available, and the only option when neither is supported.
+ * Voice agent (Req 11.4-11.10). Listening uses the browser's SpeechRecognition; typing always works.
+ * Answers are spoken with Amazon Polly when the server has it switched on (provider "polly"), and with the
+ * browser's own voice otherwise, or whenever Polly fails, so a spoken answer never depends on AWS.
  */
 export default function VoiceAgent() {
   const api = useApi();
-  const recorder = useRecorder();
   const speech = useSpeech();
   const audioRef = useRef(null);
   const [state, setState] = useState('idle');
   const [result, setResult] = useState(null);
   const [answerId, setAnswerId] = useState(0); // new answer, new card: a confirm card must not keep the last answer's state
   const [error, setError] = useState(null);
+  const [readAloud, setReadAloud] = useState(() => localStorage.getItem(READ_ALOUD_KEY) !== 'off');
   const [text, setText] = useState('');
 
   const { data: ex } = useQuery({ queryKey: ['voice', 'examples'], queryFn: () => fetchExamples(api) });
   const provider = ex?.provider ?? 'browser';
-  const micAvailable = provider === 'openai' ? canRecord() : canRecognise();
+  const micAvailable = canRecognise();
 
+  const toggleReadAloud = (on) => {
+    setReadAloud(on);
+    localStorage.setItem(READ_ALOUD_KEY, on ? 'on' : 'off');
+    if (!on) { audioRef.current?.pause?.(); window.speechSynthesis?.cancel?.(); }
+  };
+  /** Speaks an answer: Polly first when it is on, the browser voice if Polly is off or fails. */
+  const sayAloud = async (answer) => {
+    if (provider === 'polly') {
+      try {
+        const blob = await speakAudio(api, answer);
+        const url = URL.createObjectURL(blob);
+        const audio = audioRef.current;
+        await new Promise((resolve, reject) => {
+          audio.src = url;
+          audio.onended = resolve;
+          audio.onerror = () => reject(new Error('audio'));
+          Promise.resolve(audio.play()).catch(reject);
+        }).finally(() => URL.revokeObjectURL(url));
+        return;
+      } catch {
+        /* fall through to the browser voice */
+      }
+    }
+    await speech.speak(answer);
+  };
   const fail = (err) => {
     setError(errorMessage(err));
     setState('error');
@@ -58,9 +82,9 @@ export default function VoiceAgent() {
       const res = await ask(api, question);
       setResult(res);
       setAnswerId((n) => n + 1);
-      if (speak) {
+      if (speak && readAloud) {
         setState('speaking');
-        await speech.speak(res.answer);
+        await sayAloud(res.answer);
       }
       setState('idle');
     } catch (err) {
@@ -71,30 +95,12 @@ export default function VoiceAgent() {
   const onOrb = async () => {
     setError(null);
     try {
-      if (provider === 'openai') {
-        if (!recorder.recording) {
-          await recorder.start();
-          setState('listening');
-          return;
-        }
-        const blob = await recorder.stop();
-        setState('thinking');
-        const res = await voiceQuery(api, blob);
-        setResult(res);
-        setAnswerId((n) => n + 1);
-        setState('speaking');
-        const url = URL.createObjectURL(res.audio);
-        audioRef.current.src = url;
-        audioRef.current.onended = () => { URL.revokeObjectURL(url); setState('idle'); };
-        await audioRef.current.play();
-      } else {
-        if (state === 'listening') { speech.stopListening(); return; }
-        setState('listening');
-        const heard = await speech.listen();
-        if (!heard) { setState('idle'); return; }
-        setText(heard);
-        await askText(heard);
-      }
+      if (state === 'listening') { speech.stopListening(); return; }
+      setState('listening');
+      const heard = await speech.listen();
+      if (!heard) { setState('idle'); return; }
+      setText(heard);
+      await askText(heard);
     } catch (err) {
       fail(err.name === 'NotAllowedError' ? new Error('Microphone permission was denied. You can type your question instead.') : err);
     }
@@ -139,6 +145,10 @@ export default function VoiceAgent() {
           </Button>
         </form>
 
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" checked={readAloud} onChange={(e) => toggleReadAloud(e.target.checked)} />
+          Read answers aloud{provider === 'polly' ? ' (Amazon Polly)' : ''}
+        </label>
         {ex?.examples?.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2" aria-label="Example questions">
             {ex.examples.map((q) => (

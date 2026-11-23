@@ -11,10 +11,9 @@ inclusion: always
 - MongoDB through Mongoose 8. In `DEMO_MODE=true`, `mongodb-memory-server` starts an in-memory DB and seeds it.
 - Auth: `jsonwebtoken` (24h expiry, claims `{ userId, role, name }`), `bcryptjs` with cost ≥ 10.
 - Security: `helmet`, `cors` (origin from `CLIENT_URL`), `express.json({ limit: '1mb' })`.
-- Uploads: `multer` with memory storage, used only for voice audio (≤ 10 MB).
 - Jobs: `node-cron`.
 - PDF: `pdfkit`.
-- Voice: the `openai` SDK (`whisper-1` for STT, `tts-1` with voice `alloy` for TTS). It is optional, and the server must run without `OPENAI_API_KEY`.
+- Voice: the browser's Web Speech API for listening and, by default, speaking. Optional Amazon Polly (`@aws-sdk/client-polly`) for spoken answers when `VOICE_PROVIDER=polly`; the server must run without AWS keys, and the client falls back to the browser voice if Polly fails.
 - Tests: Jest 29 run with `--experimental-vm-modules`, `fast-check` for property-based tests, `supertest` for HTTP and `mongodb-memory-server` for integration.
 
 **Client** (`*/client`)

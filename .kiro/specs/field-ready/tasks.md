@@ -25,12 +25,12 @@ Build in the order: offline-safe shell, tour, assistant check, then the written 
   - [x]* 2.3 Write component tests for steps, keyboard, remember-once and replay
     - _Requirements: 3.1, 3.3, 3.4, 3.6_
 - [x] 3. Checkpoint: client suites, builds and `check:core` pass in all three apps
-- [x] 4. Assistant check
-  - [x] 4.1 Write `server/scripts/assistant-test.js` with `explainAwsError`; add `npm run assistant:test`; add the `assistant` flag to `/api/health`
+- [x] 4. Polly voice check (re-scoped from the Bedrock assistant check)
+  - [x] 4.1 Write `speechService.js` (Polly, `explainAwsError`), `POST /api/voice/speak` and `server/scripts/voice-test.js`; add `npm run voice:test`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [x]* 4.2 Write unit tests for `explainAwsError` and the health flag
+  - [x]* 4.2 Write unit tests for the Polly wrapper, `explainAwsError` and the endpoint, and client tests for playback, fallback and the checkbox
     - _Requirements: 4.2, 4.4_
-  - [x] 4.3 Write `docs/BEDROCK.md`
+  - [x] 4.3 Write `docs/POLLY.md`
     - _Requirements: 4.5_
 - [x] 5. Browser verification on a production build
   - [x] 5.1 Serve each portal's production build, and check manifest, service worker, offline shell, no cached API calls, tour once-only

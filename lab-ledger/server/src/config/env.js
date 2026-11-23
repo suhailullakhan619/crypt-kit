@@ -16,7 +16,7 @@ export class EnvError extends Error {
   }
 }
 
-const VOICE_PROVIDERS = ['openai', 'browser'];
+const VOICE_PROVIDERS = ['polly', 'browser'];
 
 /**
  * Validates a raw environment object and returns a frozen, typed config.
@@ -24,7 +24,7 @@ const VOICE_PROVIDERS = ['openai', 'browser'];
  *
  * @param {Record<string, string | undefined>} src - usually process.env
  * @returns {Readonly<{PORT:number, MONGODB_URI:string|null, JWT_SECRET:string, CLIENT_URL:string,
- *   DEMO_MODE:boolean, OPENAI_API_KEY:string|null, VOICE_PROVIDER:'openai'|'browser'}>}
+ *   DEMO_MODE:boolean, POLLY:object|null, VOICE_PROVIDER:'polly'|'browser'}>}
  * @throws {EnvError} naming the offending variable
  */
 export function loadEnv(src = {}) {
@@ -49,15 +49,20 @@ export function loadEnv(src = {}) {
     throw new EnvError('MONGODB_URI is required (or set DEMO_MODE=true)');
   }
 
-  const OPENAI_API_KEY = str('OPENAI_API_KEY');
+  // Speech output with Amazon Polly. Off unless VOICE_PROVIDER=polly; the browser's own voice is the fallback.
+  // Credentials come from the standard AWS sources (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, or an IAM role).
   const voiceRaw = str('VOICE_PROVIDER')?.toLowerCase() ?? null;
   if (voiceRaw && !VOICE_PROVIDERS.includes(voiceRaw)) {
     throw new EnvError(`VOICE_PROVIDER must be one of ${VOICE_PROVIDERS.join(', ')} (got "${voiceRaw}")`);
   }
-  if (voiceRaw === 'openai' && !OPENAI_API_KEY) {
-    throw new EnvError('VOICE_PROVIDER=openai requires OPENAI_API_KEY');
-  }
-  const VOICE_PROVIDER = voiceRaw ?? (OPENAI_API_KEY ? 'openai' : 'browser');
+  const VOICE_PROVIDER = voiceRaw ?? 'browser';
+  const voiceId = str('POLLY_VOICE_ID') ?? 'Joanna';
+  if (!/^[A-Za-z]{2,30}$/.test(voiceId)) throw new EnvError('POLLY_VOICE_ID must be a voice name such as Joanna');
+  const engine = (str('POLLY_ENGINE') ?? 'neural').toLowerCase();
+  if (!['neural', 'standard'].includes(engine)) throw new EnvError('POLLY_ENGINE must be neural or standard');
+  const region = str('POLLY_REGION') ?? str('AWS_REGION') ?? 'us-east-1';
+  if (VOICE_PROVIDER === 'polly' && !/^[a-z]{2}(-[a-z]+)+-\d$/.test(region)) throw new EnvError(`POLLY_REGION must look like us-east-1 (got "${region}")`);
+  const POLLY = VOICE_PROVIDER === 'polly' ? { voiceId, engine, region } : null;
 
   // Optional database-name override. Mongoose uses it instead of the name in MONGODB_URI, so the same
   // cluster URI can serve a separate "<app>_test" database and the original database is never touched.
@@ -103,12 +108,6 @@ export function loadEnv(src = {}) {
   const MAIL = smtpSet === 4
     ? { host: smtp.host, port: smtpPort, user: smtp.user, pass: smtp.pass, from: smtp.from, replyTo: str('MAIL_REPLY_TO'), allowTestDomains: str('MAIL_ALLOW_TEST_DOMAINS')?.toLowerCase() === 'true' }
     : null;
-  // Optional chat assistant for questions the built-in parser cannot read (Amazon Bedrock). Off unless a model is named.
-  // Credentials come from the standard AWS sources (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, or an IAM role).
-  const modelId = str('BEDROCK_MODEL_ID');
-  if (modelId && !/^[A-Za-z0-9._:/-]{3,200}$/.test(modelId)) throw new EnvError('BEDROCK_MODEL_ID may only contain letters, digits and . _ : / -');
-  const ASSISTANT = modelId ? { modelId, region: str('AWS_REGION') ?? str('BEDROCK_REGION') ?? 'us-east-1' } : null;
-
   // Optional owner account created by the seed (the superuser role). Kept in .env, never in code,
   // so the password is not committed. Both email and password are needed.
   const adminEmail = str('SEED_ADMIN_EMAIL');
@@ -130,7 +129,7 @@ export function loadEnv(src = {}) {
     PORT,
     MAIL,
     SEED_ADMIN,
-    ASSISTANT,
+    POLLY,
     MONGODB_DB_NAME: useUri ? MONGODB_DB_NAME : null,
     SEED_ON_BOOT,
     // Demo mode uses the in-memory server (MONGODB_URI null) unless DEMO_PERSIST=true.
@@ -140,7 +139,6 @@ export function loadEnv(src = {}) {
     JWT_SECRET,
     CLIENT_URL: str('CLIENT_URL') ?? 'http://localhost:5173',
     DEMO_MODE,
-    OPENAI_API_KEY,
     VOICE_PROVIDER,
   });
 }

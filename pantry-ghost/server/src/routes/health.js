@@ -11,7 +11,6 @@ router.get('/', (_req, res) => {
     app: config.appName,
     demo: env.DEMO_MODE,
     voiceProvider: env.VOICE_PROVIDER,
-    assistant: !!env.ASSISTANT, // true when BEDROCK_MODEL_ID is set
     timestamp: new Date().toISOString(),
   });
 });

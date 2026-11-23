@@ -41,7 +41,7 @@ The rule was simple: it can never see more than the person asking, and it never 
 - A question becomes a **structured query** (resource, filters, date range, totals), not free text sent near a database. A rule-based parser handles most questions with no AI at all: "which notes are over due", "total minutes I logged this week", "tell me about N-0006".
 - The query engine checks the asker's read permission, touches only declared fields, caps the result size, and escapes everything it searches for.
 - **Commands are drafts.** "Add a note to buy candles due friday" produces a card with Confirm and Cancel. Nothing is saved until Confirm, and the save goes through the normal API, so validation and permissions are identical to the forms.
-- An optional Amazon Bedrock model can answer free-form questions, but only by calling three read-only tools that go through that same engine. Text inside records is data, never instructions.
+- Answers can be read aloud. The browser's own voice works with no setup, and Amazon Polly takes over when the server has AWS keys. If Polly ever fails, the page falls back to the browser voice, so an answer is never silent.
 
 "Today", "tomorrow at 5pm" and "this week" mean the *asker's* day, not the server's. The client sends its timezone offset, and a test asks for a reminder from an Indian timezone and checks the stored instant.
 

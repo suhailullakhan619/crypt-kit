@@ -40,7 +40,7 @@ flowchart LR
     Core[Core: resource definitions, hooks, status flows]
   end
   DB[(MongoDB Atlas)]
-  LLM[[Amazon Bedrock: optional, read-only tools]]
+  Polly[[Amazon Polly: spoken answers, optional]]
   Mail[[SMTP: notifications]]
   CDN --> UI
   UI --> SW
@@ -49,7 +49,7 @@ flowchart LR
   Core --> DB
   API --> Q
   Q --> DB
-  Q -.->|only for free-form questions| LLM
+  API -.->|text to speak| Polly
   API --> Mail
 ```
 
@@ -110,7 +110,7 @@ npm run dev:lab
 
 The client runs on http://localhost:5173 and the API on http://localhost:5000. Every environment variable is documented in each app's `server/.env.example` and in the [skeleton README](skeleton/README.md#environment-serverenv).
 
-The voice agent uses OpenAI Whisper and TTS when `OPENAI_API_KEY` is set. Without a key, it falls back to the browser's Web Speech API, so judges can test it with no key.
+The voice agent listens with the browser's speech recognition and reads answers aloud with the browser's own voice, so judges need no keys. Set `VOICE_PROVIDER=polly` with AWS keys to have Amazon Polly speak instead ([`docs/POLLY.md`](docs/POLLY.md)); if Polly fails, the page falls back to the browser voice.
 
 ## Demo accounts (`DEMO_MODE=true`; the login page also has one-click buttons)
 
@@ -132,7 +132,7 @@ Demo accounts cannot change or reset their password, so the one-click demo keeps
 | **Subtasks (checklist field)** | `{ type: 'checklist' }` gives a tickable list with a progress bar in forms and on the detail page, `2/5` in lists, and CSV import/export as `[x] done; [ ] to do`. |
 | **Comments** | A thread on every record's detail page (on unless the definition says `comments: false`). Anyone who can read the record can comment; authors and the superuser can delete. The record's creator and the people assigned to it are notified. The history notes that a comment was added but never copies its text, so a deleted comment is gone everywhere. Limited to 30 per 15 minutes per user. |
 | **Search everywhere** | **Ctrl/Cmd + K**, **/** or the *Search…* button opens a palette that finds records in every resource you may read (up to 5 per resource), jumps to pages and starts *Create new …*. API: `GET /api/search?q=`. |
-| **Chat assistant** | The Voice agent page answers typed or spoken questions in plain words, with no AI needed: any resource by its spoken names (plurals and small typos), statuses and other values ("high priority", "not done"), "overdue" in any spelling, dates ("due this week", "added last month", "friday"), "mine" or "assigned to Igor", text ("about candles"), totals ("total minutes this week", "how many hours did I log"), an overview ("what is on my plate"), lookup by ID ("tell me about N-0006"), help and greetings. Answers list the records as links, with "see all". Dates follow the user's own timezone. In Crypt Kit it also takes commands, "add a note to buy candles due friday", "remind me to call mum tomorrow at 5pm", "log 30 minutes on the report", "mark N-0006 as done", and shows a draft with **Confirm** and **Cancel**: nothing is saved until Confirm. Optional: set `BEDROCK_MODEL_ID` to let an Amazon Bedrock model answer questions the rules cannot read. It can only call read-only lookups that are checked against the asker's permissions, and it never changes data. |
+| **Chat assistant** | The Voice agent page answers typed or spoken questions in plain words, with no AI needed: any resource by its spoken names (plurals and small typos), statuses and other values ("high priority", "not done"), "overdue" in any spelling, dates ("due this week", "added last month", "friday"), "mine" or "assigned to Igor", text ("about candles"), totals ("total minutes this week", "how many hours did I log"), an overview ("what is on my plate"), lookup by ID ("tell me about N-0006"), help and greetings. Answers list the records as links, with "see all". Dates follow the user's own timezone. In Crypt Kit it also takes commands, "add a note to buy candles due friday", "remind me to call mum tomorrow at 5pm", "log 30 minutes on the report", "mark N-0006 as done", and shows a draft with **Confirm** and **Cancel**: nothing is saved until Confirm. Answers can be read aloud, by the browser voice or by Amazon Polly when it is switched on. |
 | **Installable and offline-ready** | Each portal is a web app with its own icon: use *Add to Home screen* and it opens like an app, and still opens (with an "offline" banner) when there is no connection. A service worker keeps only the app shell; it never stores records or anything from the API. |
 | **First-run tour** | A 30-second dialog on a first visit points out search, the assistant, scanning and the theme toggle. Replay it from the search box ("tour"). |
 | **Duplicate** | The detail page's *Duplicate* button opens a prefilled new-record form (IDs, status and unique fields are left out, subtasks come back unticked). |
@@ -161,9 +161,9 @@ npm run smoke --prefix lab-ledger/server   # boots demo mode and runs the HTTP c
 
 | | Server | Client | Smoke | Browser (e2e) |
 |---|---|---|---|---|
-| Skeleton | 309 | 200 | 31 checks | 72 steps |
-| Lab Ledger | 363 | 206 | 40 checks | 60 steps |
-| Pantry Ghost | 376 | 200 | 30 checks | 51 steps |
+| Skeleton | 300 | 205 | 31 checks | 72 steps |
+| Lab Ledger | 354 | 211 | 40 checks | 60 steps |
+| Pantry Ghost | 367 | 205 | 30 checks | 51 steps |
 
 The browser suite in [`e2e/`](e2e) drives real Chrome through every feature (sign-in per role, CRUD, accounts, CSV, notifications and email, QR cards, scanning a photo of a QR, label sheets, clickable rows, sorting, board and calendar views, search palette, comments, subtasks, duplicate, dialogs on desktop and mobile, and a sweep for `[object Object]`). `npm run live --prefix e2e` runs a read-only pass over the three live sites (36 steps, every demo role). `npm run responsive --prefix e2e` opens every page at five widths from 320 to 1440 px and flags sideways scrolling and tap targets under 24 px. `npm run themes --prefix e2e` visits every page of the local portals in dark and light, on desktop and phone, saves a screenshot of each and fails on unreadable text, white form controls or sideways scrolling (about 490 screens, including the chat answers, the tour and the offline banner, none flagged).
 
