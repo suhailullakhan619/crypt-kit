@@ -1,6 +1,7 @@
 // The "server is waking up" notice, in a real browser. The API is made slow on purpose (like a free-plan
 // host that has gone to sleep), so this only ever reads. Run it against one local app:
 //   E2E_APPS=skeleton node slowserver.mjs        (the e2e-app.ps1 runner sets E2E_APPS and starts the app)
+//   E2E_APPS=lab E2E_BASE=https://leb-ledger.netlify.app node slowserver.mjs     (a live site)
 import { chromium } from 'playwright-core';
 const APPS = {
   skeleton: { base: 'http://localhost:5171', admin: /^Admin/i },
@@ -8,7 +9,7 @@ const APPS = {
   pantry: { base: 'http://localhost:5173', admin: /^Coordinator/i },
 };
 const key = (process.env.E2E_APPS ?? 'skeleton').split(',')[0].trim();
-const app = APPS[key];
+const app = { ...APPS[key], base: (process.env.E2E_BASE ?? APPS[key].base).replace(/\/$/, '') }; // E2E_BASE: point it at a live site
 const browser = await chromium.launch({ channel: process.env.CHROME_CHANNEL ?? 'chrome', headless: !process.env.HEADED });
 const results = [];
 async function step(name, fn) {
